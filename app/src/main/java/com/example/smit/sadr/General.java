@@ -2,6 +2,8 @@ package com.example.smit.sadr;
 
 
 
+import android.util.Log;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +17,10 @@ public  class General {
 
 
     public  static List<MusicUnits> getMusicList(List<String> folders){
+        Log.e("SADR","getMusicList - Start" );
+        Long start, stop,fstart, ffstart;
+        int total = 0;
+        start = System.currentTimeMillis();
         List<MusicUnits> musicList = new ArrayList<MusicUnits>();
         FFmpegMediaMetadataRetriever  meta = new FFmpegMediaMetadataRetriever();
         String tmp;
@@ -23,17 +29,19 @@ public  class General {
         int pos;
         for(String folder : folders)
         {
+            fstart = System.currentTimeMillis();
             File file = new File(folder);
             File[] fileList = file.listFiles();
             for (Integer i = 0; i < fileList.length; i++) {
+
                 MusicUnits unit = new MusicUnits();
                 name = fileList[i].getName();
                 unit.Path = fileList[i].getAbsolutePath();
                 format = name.substring(name.lastIndexOf(".") + 1, name.length());
-                if (format.equals("wav"))unit.formatIndex = 1;
+                if (format.equals("mp3"))unit.formatIndex = 3;
                 else if (format.equals("flac"))unit.formatIndex = 2;
-                else if (format.equals("mp3"))unit.formatIndex = 3;
-                //Log.e("SADR",fileList.length + ": "+i+ " = " + fileList[i].getAbsolutePath() );
+                else if (format.equals("wav"))unit.formatIndex = 1;
+                ffstart = System.currentTimeMillis();
                 try
                 {
                     meta.setDataSource(fileList[i].getAbsolutePath());
@@ -60,8 +68,7 @@ public  class General {
                 }
                 catch (Exception e)
                 {
-                    //Log.e("SADR","--->>ERROOR-------->>>>" );
-                    //Log.e("SADR",fileList.length + ": "+i+ " = " + fileList[i].getAbsolutePath() );
+
                     if((pos=name.indexOf("-"))>0){
                         unit.MAuthor = name.substring(0,pos);
                         unit.Mname = name.substring(pos+1,name.lastIndexOf("."));
@@ -74,13 +81,16 @@ public  class General {
                     unit.Mtime = General.getStrTime(unit.MDuration);
 
                 }
-                //Log.d("SADR",unit.MAuthor +" "+unit.Mname+ " " + unit.Mtime + " " + unit.MDuration);
                 musicList.add(unit);
 
-
+                Log.e("SADR", i + ": "+(System.currentTimeMillis() - ffstart) +" : "+name);
+                total +=(System.currentTimeMillis() - ffstart);
             }
-        }
 
+            Log.e("SADR","for "  + folder+ "Done in " + (System.currentTimeMillis() - fstart) );
+        }
+        stop = System.currentTimeMillis();
+        Log.e("SADR","getMusicList - Done in " + (stop - start) + "total " + total);
         return musicList;
     }
 

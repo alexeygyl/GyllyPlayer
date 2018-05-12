@@ -26,14 +26,18 @@ public class ListMusicAdapter extends ArrayAdapter<MusicUnits>  {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        LayoutInflater inflater = (LayoutInflater) context
-                .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
-        View rowView = inflater.inflate(R.layout.list_music, parent, false);
-        TextView textName = (TextView) rowView.findViewById(R.id.MusicName);
-        TextView textAuthor = (TextView) rowView.findViewById(R.id.MusicAuthor);
-        TextView textTime = (TextView) rowView.findViewById(R.id.MusicTime);
-        ImageView imageView = (ImageView) rowView.findViewById(R.id.logo);
+        if(convertView == null){
+            LayoutInflater inflater = (LayoutInflater) context
+                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+
+            convertView = inflater.inflate(R.layout.list_music, parent, false);
+
+        }
+        TextView textName = (TextView) convertView.findViewById(R.id.MusicName);
+        TextView textAuthor = (TextView) convertView.findViewById(R.id.MusicAuthor);
+        TextView textTime = (TextView) convertView.findViewById(R.id.MusicTime);
+        ImageView imageView = (ImageView) convertView.findViewById(R.id.logo);
 
         //textName.setText(musicUnitses.get(position).Mname.substring(0,musicUnitses.get(position).Mname.lastIndexOf(".")));
         textName.setText(musicUnitses.get(position).Mname);
@@ -85,6 +89,6 @@ public class ListMusicAdapter extends ArrayAdapter<MusicUnits>  {
 
         }
 
-        return rowView;
+        return convertView;
     }
 }

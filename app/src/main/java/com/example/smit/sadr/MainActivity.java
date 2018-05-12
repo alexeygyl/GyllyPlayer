@@ -64,10 +64,9 @@ public class MainActivity extends AppCompatActivity {
             General.folderUnits.add("/storage/sdcard1/music/all");
         if(!General.folderUnits.contains("/storage/sdcard1/music/rapR"))
             General.folderUnits.add("/storage/sdcard1/music/rapR");
+        Log.e("SADR","FOLDERS done");
         musicUnits = General.getMusicList(General.folderUnits);
         initText();
-
-
         //vProgressBar = (ProgressBar)findViewById(R.id.vprogressbar);
         seekBar = (SeekBar) findViewById(R.id.seekBar);
         Mplay.setBackgroundColor(Color.WHITE);
@@ -77,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
         musicAuthor.setTextColor(Color.WHITE);
         getSupportActionBar().setBackgroundDrawable(new ColorDrawable(Color.rgb(40, 40, 40)));
         adapter = new ListMusicAdapter(this, musicUnits);
+        Log.e("SADR","ListMusicAdapter  done");
         listmusic.setAdapter(adapter);
         mediaPlayer = new MediaPlayer();
 
@@ -187,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-
+        Log.e("SADR","OnCreate  done");
     }
 
     @Override
