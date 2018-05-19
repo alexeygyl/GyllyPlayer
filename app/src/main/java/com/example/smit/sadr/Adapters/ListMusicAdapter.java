@@ -26,7 +26,7 @@ public class ListMusicAdapter extends ArrayAdapter<MusicUnits>  {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-
+        if( this.musicUnitses.size() == 0)return convertView;
         if(convertView == null){
             LayoutInflater inflater = (LayoutInflater) context
                     .getSystemService(Context.LAYOUT_INFLATER_SERVICE);

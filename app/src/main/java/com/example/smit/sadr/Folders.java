@@ -30,7 +30,7 @@ public  class Folders extends AppCompatActivity {
         getSupportActionBar().setBackgroundDrawable(new ColorDrawable(Color.rgb(40, 40, 40)));
         getSupportActionBar().setTitle("Folders");
         listFolder = (ListView)findViewById(R.id.listViewFolders);
-        adapter = new ListFoldersAdapter(this,  General.folderUnits);
+        adapter = new ListFoldersAdapter(this,  MainActivity.folderUnits);
         listFolder.setAdapter(adapter);
 
         listFolder.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -40,9 +40,13 @@ public  class Folders extends AppCompatActivity {
                 builder.setMessage("Do you  want delete this folder?").setPositiveButton("Delete", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        General.folderUnits.remove(position);
-                        adapter = new ListFoldersAdapter(Folders.this,  General.folderUnits);
-                        listFolder.setAdapter(adapter);
+                        MainActivity.removeMusicByFolderFromBD( MainActivity.folderUnits.get(position));
+                        MainActivity.removeMusicByFolderFromList( MainActivity.folderUnits.get(position));
+                        MainActivity.removeFolderFromBD(MainActivity.folderUnits.get(position));
+                        MainActivity.folderUnits.remove(position);
+                        adapter.notifyDataSetChanged();
+                        //adapter = new ListFoldersAdapter(Folders.this,  MainActivity.folderUnits);
+                        //listFolder.setAdapter(adapter);
                     }
                 }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                     @Override
@@ -81,8 +85,9 @@ public  class Folders extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         switch (requestCode){
             case 1:
-                adapter = new ListFoldersAdapter(this,  General.folderUnits);
-                listFolder.setAdapter(adapter);
+                //adapter = new ListFoldersAdapter(this,  General.folderUnits);
+                //listFolder.setAdapter(adapter);
+                adapter.notifyDataSetChanged();
                 break;
         }
 

@@ -15,8 +15,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 
-import com.example.smit.sadr.Adapters.ListFoldersAdapter;
 import com.example.smit.sadr.Adapters.ListNewFolderAdapter;
 
 import java.io.File;
@@ -87,9 +87,12 @@ public class AddNewFolder extends AppCompatActivity {
                 setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        //Log.e("YES", currentDir+"/"+folderUnits.get(posClicked));
-                        General.folderUnits.add(currentDir + "/" + folderUnits.get(posClicked));
-                        toUpdate=1;
+                        if(!MainActivity.folderUnits.contains(currentDir + "/" + folderUnits.get(posClicked))){
+                            MainActivity.folderUnits.add(currentDir + "/" + folderUnits.get(posClicked));
+                            MainActivity.insertNewFolder(currentDir + "/" + folderUnits.get(posClicked));
+                            MainActivity.updateMusicList(currentDir + "/" + folderUnits.get(posClicked));
+                            toUpdate=1;
+                        }else Toast.makeText(AddNewFolder.this, "This folder is already exists", Toast.LENGTH_SHORT).show();
                     }
                 }).setNegativeButton("No", new DialogInterface.OnClickListener() {
                     @Override

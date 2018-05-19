@@ -1,8 +1,12 @@
 package com.example.smit.sadr;
 
 import android.content.BroadcastReceiver;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.media.MediaPlayer;
@@ -21,16 +25,22 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import com.example.smit.sadr.Adapters.ListMusicAdapter;
+
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import wseemann.media.FFmpegMediaMetadataRetriever;
+
 
 public class MainActivity extends AppCompatActivity {
 
-     public List<MusicUnits> musicUnits = new ArrayList<MusicUnits>();
-
+    public static List<MusicUnits> musicUnits = new ArrayList<MusicUnits>();
+    public  static List<String> folderUnits = new ArrayList<String>();
     ImageButton Mplay;
     ImageButton Mstop;
     ImageButton MplayNext;
@@ -47,12 +57,15 @@ public class MainActivity extends AppCompatActivity {
     Handler seekHandler = new Handler();
     TextView musicName;
     TextView musicAuthor;
-    ListView listmusic;
+    static ListView listmusic;
     TextView mDuration;
     static Integer MODE=1;
-    ListMusicAdapter adapter;
+    static ListMusicAdapter adapter;
     public  static ProgressBar vProgressBar;
     Bundle bundle=new Bundle();
+    static DBHelper dbHelper;
+    static SQLiteDatabase database;
+    static ContentValues contentValues;
 
 
     @Override
@@ -60,12 +73,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initViews();
-        if(!General.folderUnits.contains("/storage/sdcard1/music/all"))
-            General.folderUnits.add("/storage/sdcard1/music/all");
-        if(!General.folderUnits.contains("/storage/sdcard1/music/rapR"))
-            General.folderUnits.add("/storage/sdcard1/music/rapR");
-        Log.e("SADR","FOLDERS done");
-        musicUnits = General.getMusicList(General.folderUnits);
+        dbHelper = new DBHelper(this);
+        musicUnits = getMusicListFromBD();
+        folderUnits = getFolderListFromBD();
         initText();
         //vProgressBar = (ProgressBar)findViewById(R.id.vprogressbar);
         seekBar = (SeekBar) findViewById(R.id.seekBar);
@@ -76,9 +86,12 @@ public class MainActivity extends AppCompatActivity {
         musicAuthor.setTextColor(Color.WHITE);
         getSupportActionBar().setBackgroundDrawable(new ColorDrawable(Color.rgb(40, 40, 40)));
         adapter = new ListMusicAdapter(this, musicUnits);
-        Log.e("SADR","ListMusicAdapter  done");
         listmusic.setAdapter(adapter);
         mediaPlayer = new MediaPlayer();
+        for (String folder : folderUnits) {
+            updateMusicList(folder);
+            adapter.notifyDataSetChanged();
+        }
 
         seekBar.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -187,7 +200,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Log.e("SADR","OnCreate  done");
     }
 
     @Override
@@ -213,7 +225,7 @@ public class MainActivity extends AppCompatActivity {
             mediaPlayer.reset();
         }
         try {
-            mediaPlayer.setDataSource(musicUnits.get(position).Path);
+            mediaPlayer.setDataSource(musicUnits.get(position).Folder +"/"+ musicUnits.get(position).File );
             mediaPlayer.prepare();
             mediaPlayer.start();
             seekBar.setProgress(0);
@@ -221,9 +233,13 @@ public class MainActivity extends AppCompatActivity {
             startPlayProgressUpdater();
 
         } catch (IOException e) {
-            e.printStackTrace();
+            removeMusic(musicUnits.get(position).File);
+            musicUnits.remove(position);
+            adapter.notifyDataSetChanged();
+            Toast.makeText(this, "This file not more exists: DELETED", Toast.LENGTH_SHORT).show();
         }
         catch (IllegalStateException e) {
+
             e.printStackTrace();
         }
 
@@ -231,7 +247,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void startPlayProgressUpdater() {
         seekBar.setProgress(mediaPlayer.getCurrentPosition());
-        mDuration.setText(General.getStrTime(mediaPlayer.getCurrentPosition()));
+        mDuration.setText(getStrTime(mediaPlayer.getCurrentPosition()));
         if (mediaPlayer.isPlaying()) {
             Runnable notification = new Runnable() {
                 public void run() {
@@ -270,20 +286,229 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public static void insertNewMusic(MusicUnits unit){
+        database = dbHelper.getWritableDatabase();
+        try {
+            contentValues = new ContentValues();
+            contentValues.put(DBHelper.NAME, unit.Mname);
+            contentValues.put(DBHelper.TIME, unit.Mtime);
+            contentValues.put(DBHelper.DURATION, unit.MDuration);
+            contentValues.put(DBHelper.OWNER, unit.MAuthor);
+            contentValues.put(DBHelper.FILE, unit.File);
+            contentValues.put(DBHelper.FOLDER, unit.Folder);
+            database.insert(DBHelper.M_TABLE, null, contentValues);
+            database.close();
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void removeMusic(String file){
+        database = dbHelper.getWritableDatabase();
+        try {
+            database.execSQL("DELETE FROM " + DBHelper.M_TABLE + " WHERE " + DBHelper.FILE + "= '" + file + "'");
+            database.close();
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void removeMusicByFolderFromBD(String folder){
+        database = dbHelper.getWritableDatabase();
+        try {
+            database.execSQL("DELETE FROM " + DBHelper.M_TABLE + " WHERE " + DBHelper.FOLDER + "= '" + folder + "'");
+            database.close();
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void removeFolderFromBD(String folder){
+        database = dbHelper.getWritableDatabase();
+        try {
+            database.execSQL("DELETE FROM " + DBHelper.F_TABLE + " WHERE " + DBHelper.FOLDER + "= '" + folder + "'");
+            database.close();
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void removeMusicByFolderFromList(String folder){
+        List<MusicUnits> out = new ArrayList<MusicUnits>();
+        for (MusicUnits unit: musicUnits) {
+            if(!unit.Folder.equalsIgnoreCase(folder))out.add(unit);
+        }
+        musicUnits.clear();
+        for (MusicUnits unit: out) {
+            musicUnits.add(unit);
+        }
+    }
+
+    public static void insertNewFolder(String folder){
+        database = dbHelper.getWritableDatabase();
+        try {
+            contentValues = new ContentValues();
+            contentValues.put(DBHelper.FOLDER, folder);
+            database.insert(DBHelper.F_TABLE, null, contentValues);
+            database.close();
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public  List<MusicUnits> getMusicListFromBD(){
+        List<MusicUnits> musicList = new ArrayList<MusicUnits>();
+        database = dbHelper.getReadableDatabase();
+        String coluns[] = {DBHelper.NAME,DBHelper.OWNER,DBHelper.TIME,DBHelper.FILE,DBHelper.DURATION,DBHelper.FOLDER };
+        try {
+            Cursor cursor = database.query(DBHelper.M_TABLE, coluns, null, null, null, null, null);
+            if (cursor.moveToFirst()) {
+                int nameInd = cursor.getColumnIndex(DBHelper.NAME);
+                int ownerInd = cursor.getColumnIndex(DBHelper.OWNER);
+                int timeInd = cursor.getColumnIndex(DBHelper.TIME);
+                int fileInd = cursor.getColumnIndex(DBHelper.FILE);
+                int folderInd = cursor.getColumnIndex(DBHelper.FOLDER);
+                int durationInd = cursor.getColumnIndex(DBHelper.DURATION);
+                do {
+                    MusicUnits unit = new MusicUnits();
+                    unit.Mname = cursor.getString(nameInd);
+                    unit.MAuthor = cursor.getString(ownerInd);
+                    unit.File = cursor.getString(fileInd);
+                    unit.Folder = cursor.getString(folderInd);
+                    unit.Mtime = cursor.getString(timeInd);
+                    unit.MDuration = cursor.getInt(durationInd);
+                    musicList.add(unit);
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
+            database.close();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return musicList;
+    }
+
+    public  List<String> getFolderListFromBD(){
+        List<String> folderUnits = new ArrayList<String>();
+        database = dbHelper.getReadableDatabase();
+        String coluns[] = {DBHelper.FOLDER};
+        try {
+            Cursor cursor = database.query(DBHelper.F_TABLE, coluns, null, null, null, null, null);
+            if (cursor.moveToFirst()) {
+                int folderInd = cursor.getColumnIndex(DBHelper.FOLDER);
+                do {
+                    folderUnits.add(cursor.getString(folderInd));
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return folderUnits;
+    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         switch (requestCode){
             case 1:
-                musicUnits.clear();
-                musicUnits = General.getMusicList(General.folderUnits);
-                adapter = new ListMusicAdapter(this, musicUnits);
-                listmusic.setAdapter(adapter);
+                adapter.notifyDataSetChanged();
                 break;
         }
     }
 
+    private static boolean ifMusicExists(String file){
+        for (MusicUnits unit : musicUnits) {
+            if(unit.File.equalsIgnoreCase(file))return true;
+        }
+        return  false;
+    }
 
+    public  static void updateMusicList(String folder){
+        FFmpegMediaMetadataRetriever meta = new FFmpegMediaMetadataRetriever();
+        String tmp;
+        String name;
+        String fullPath;
+        int pos;
+        File file = new File(folder);
+        File[] fileList = file.listFiles();
+        for (Integer i = 0; i < fileList.length; i++) {
+            name = fileList[i].getName();
+            if(ifMusicExists(name))continue;
+            Log.e("SADR",i + " NEW MUSIC " + name);
+            MusicUnits unit = new MusicUnits();
+            unit.Folder = folder;
+            unit.File = name;
+            try
+            {
+                meta.setDataSource(fileList[i].getAbsolutePath());
+                unit.MAuthor = meta.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_ARTIST);
+                if (unit.MAuthor == null) {
+                    if ((pos = name.indexOf("-")) > 0) {
+                        unit.MAuthor = name.substring(pos + 1, name.lastIndexOf("."));
+                    } else {
+                        unit.MAuthor = "Unknown";
+                    }
+                }
+                unit.MDuration =  Integer.parseInt(meta.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_DURATION));
+                if(unit.MDuration == null)unit.MDuration = 0;
+                unit.Mtime = getStrTime(unit.MDuration);
+
+                unit.Mname = meta.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_TITLE);
+                if(unit.Mname == null) {
+                    if ((pos = name.indexOf("-")) > 0) {
+                        unit.Mname = name.substring(0, pos);
+                    } else {
+                        unit.Mname = name.substring(0, name.lastIndexOf("."));
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                try {
+                    if((pos=name.indexOf("-"))>0){
+                        unit.MAuthor = name.substring(0,pos);
+                        unit.Mname = name.substring(pos+1,name.lastIndexOf("."));
+                    }
+                    else{
+                        unit.Mname = name.substring(0,name.lastIndexOf("."));
+                        unit.MAuthor = "Unknown";
+                    }
+                    unit.MDuration = 0;
+                    unit.Mtime = getStrTime(unit.MDuration);
+                }catch (Exception x){}
+            }
+            musicUnits.add(unit);
+            insertNewMusic(unit);
+        }
+
+    }
+
+    public static String getStrTime(Integer curTime){
+        String time  = new String();
+        Integer h,m,s,tmp;
+        if(curTime/1000>=60&&curTime/1000<60*60){
+            m = curTime/(1000*60);
+            s = (curTime/1000)-(60*m);
+            time = m<10?"0"+Integer.toString(m):Integer.toString(m);
+            time += ":";
+            time += s<10?"0"+Integer.toString(s):Integer.toString(s);
+        }else if(curTime/1000<60){
+            s = curTime/1000;
+            time ="00:";
+            time += s<10?"0"+Integer.toString(s):Integer.toString(s);
+        }else if(curTime/1000 >= 60*60 ){
+            h = curTime/(1000*60*60);
+            m = ((curTime/1000)-(h*60*60))/60;
+            s = (curTime/1000)-(h*60*60)-(m*60);
+            time = Integer.toString(h);
+            time +=":";
+            time = m<10?"0"+Integer.toString(m):Integer.toString(m);
+            time +=":";
+            time += s<10?"0"+Integer.toString(s):Integer.toString(s);
+        }
+
+        return time;
+    }
 
 }
