@@ -73,9 +73,6 @@ public class ListNewFolderAdapter  extends ArrayAdapter<String> {
             itemCount.setTextColor(Color.rgb(150, 150, 150));
         }
 
-
-
-
         return rowView;
     }
 

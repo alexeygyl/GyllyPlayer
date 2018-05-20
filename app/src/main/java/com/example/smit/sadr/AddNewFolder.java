@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -91,21 +92,35 @@ public class AddNewFolder extends AppCompatActivity {
 
     public  List<String> getListFolder(String path){
         List<String> listFolders = new ArrayList<String>();
-        File  list = new File(path);
-        if(!path.equalsIgnoreCase(root))listFolders.add("..");
-        for(String elem : list.list()){
-            File f = new File(path+"/"+elem);
-            if(f.isDirectory())listFolders.add(elem);
-            else if(f.isFile()){
-                if(getFileFormat(elem).equals("mp3"))listFolders.add(elem);
-                else if (getFileFormat(elem).equals("wav"))listFolders.add(elem);
+        try {
+            File  list = new File(path);
+            if(!path.equalsIgnoreCase(root))listFolders.add("..");
+            for(String elem : list.list()){
+                File f = new File(path+"/"+elem);
+                if(f.isDirectory() && !isFolderEmpty(f))listFolders.add(elem);
+                else if(f.isFile()){
+                    if(getFileFormat(elem).equals("mp3"))listFolders.add(elem);
+                    else if (getFileFormat(elem).equals("wav"))listFolders.add(elem);
+                }
             }
-        }
+        }catch (Exception e){e.printStackTrace();}
         return listFolders;
     }
 
     public  String getFileFormat(String file){
         return  file.substring(file.lastIndexOf(".")+1, file.length());
+    }
+
+    public boolean isFolderEmpty(File f){
+        if(f.list().length == 0)return true;
+        for (String elem: f.list()) {
+            File f2 = new File(f.getAbsolutePath()+"/"+elem);
+            if(f2.isDirectory())return false;
+            else if(f2.isFile()){
+                if(getFileFormat(elem).equals("mp3"))return false;
+            }
+        }
+        return true;
     }
 
     @Override

@@ -15,6 +15,7 @@ import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -41,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
 
     public static List<MusicUnits> musicUnits = new ArrayList<MusicUnits>();
     public  static List<String> folderUnits = new ArrayList<String>();
-    ImageButton Mplay;
+    public static ImageButton Mplay;
     ImageButton Mloop;
     ImageButton MplayNext;
     ImageButton MplayPrev;
@@ -52,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
     static Integer status=STOP;
     static Integer LOOP=OFF;
     static Integer sendStatus = STOP;
+    static Integer PHONE_STATUS = OFF;
     Integer lastMusPos = 0;
     static Long lastTime;
     static MediaPlayer mediaPlayer;
@@ -101,6 +103,7 @@ public class MainActivity extends AppCompatActivity {
                 if (status != STOP) {
                     SeekBar sb = (SeekBar) v;
                     mediaPlayer.seekTo(sb.getProgress());
+                    return  true;
                 }
                 return false;
             }
@@ -136,7 +139,6 @@ public class MainActivity extends AppCompatActivity {
                             v.setBackgroundResource(R.drawable.play64_off);
                             mediaPlayer.pause();
                             status = PAUSE;
-                            lastTime = SystemClock.elapsedRealtime();
 
                         } else if (status == STOP) {
                             v.setBackgroundResource(R.drawable.play64_on);
@@ -552,6 +554,51 @@ public class MainActivity extends AppCompatActivity {
     private static boolean isMusic(String name){
         String ext = name.substring(name.lastIndexOf(".") +1,name.length());
         if(ext.equalsIgnoreCase("mp3"))return true;
+        return false;
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        switch (keyCode){
+            case 126: //FONES STOP-PLAY
+                if(musicUnits.size()==0)return false;
+                if (status == PAUSE) {
+                    Mplay.setBackgroundResource(R.drawable.play64_on);
+                    mediaPlayer.start();
+                    startPlayProgressUpdater();
+                    status = ON;
+                } else if (status == ON) {
+                    Mplay.setBackgroundResource(R.drawable.play64_off);
+                    mediaPlayer.pause();
+                    status = PAUSE;
+                } else if (status == STOP) {
+                    Mplay.setBackgroundResource(R.drawable.play64_on);
+                    initText();
+                    startPlay(0, status);
+                    status = ON;
+                }
+                return true;
+            case 87: //FONES more
+                if(musicUnits.size()==0)return false;
+                lastMusPos++;
+                if (lastMusPos >= musicUnits.size()) lastMusPos = 0;
+                musicName.setText(musicUnits.get(lastMusPos).Mname);
+                musicAuthor.setText(musicUnits.get(lastMusPos).MAuthor);
+                startPlay(lastMusPos, status);
+                Mplay.setBackgroundResource(R.drawable.play64_on);
+                status = ON;
+                return true;
+            case 88: //FONES minus
+                if(musicUnits.size()==0)return false;
+                lastMusPos--;
+                if (lastMusPos < 0) lastMusPos = musicUnits.size() - 1;
+                musicName.setText(musicUnits.get(lastMusPos).Mname);
+                musicAuthor.setText(musicUnits.get(lastMusPos).MAuthor);
+                startPlay(lastMusPos, status);
+                Mplay.setBackgroundResource(R.drawable.play64_on);
+                status = ON;
+                return true;
+        }
         return false;
     }
 
