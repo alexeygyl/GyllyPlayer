@@ -36,7 +36,7 @@ public class ListNewFolderAdapter  extends ArrayAdapter<String> {
     }
 
     @Override
-    public View getView(int position, View convertView, final ViewGroup parent) {
+    public View getView(final int position, View convertView, final ViewGroup parent) {
         LayoutInflater inflater = (LayoutInflater) context
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
@@ -44,6 +44,16 @@ public class ListNewFolderAdapter  extends ArrayAdapter<String> {
         TextView folderNPath = (TextView) rowView.findViewById(R.id.NewFolderPath);
         TextView itemCount = (TextView) rowView.findViewById(R.id.NewFolderItemCount);
         ImageView folderIcon = (ImageView) rowView.findViewById(R.id.NewFolderLogo);
+        ImageView addFolder = (ImageView) rowView.findViewById(R.id.addFolder);
+        if(position != 0 && !AddNewFolder.currentDir.equals(AddNewFolder.root))
+            addFolder.setBackgroundResource(R.drawable.add_folder);
+
+        addFolder.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AddNewFolder.showAlert(position);
+            }
+        });
         folderNPath.setText(listOfFolders.get(position));
         folderNPath.setTextColor(Color.BLACK);
         folderNPath.setMaxWidth(320);
@@ -54,10 +64,11 @@ public class ListNewFolderAdapter  extends ArrayAdapter<String> {
         }else{
             try{
                 Integer count = f.list().length;
-                //if(!listOfFolders.get(position).equalsIgnoreCase("/.."))
+                if(position != 0 && !AddNewFolder.currentDir.equals(AddNewFolder.root))
                     itemCount.setText("Items: "+ Long.toString(count) );
             }catch (NullPointerException e){
-               itemCount.setText("Items: 0");
+                if(position != 0 && !AddNewFolder.currentDir.equals(AddNewFolder.root))
+                    itemCount.setText("Items: 0");
              }
             itemCount.setTextColor(Color.rgb(150, 150, 150));
         }

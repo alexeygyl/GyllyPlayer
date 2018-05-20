@@ -42,13 +42,15 @@ public class MainActivity extends AppCompatActivity {
     public static List<MusicUnits> musicUnits = new ArrayList<MusicUnits>();
     public  static List<String> folderUnits = new ArrayList<String>();
     ImageButton Mplay;
-    ImageButton Mstop;
+    ImageButton Mloop;
     ImageButton MplayNext;
     ImageButton MplayPrev;
+    static Integer OFF =0;
     static Integer ON =1;
     static Integer PAUSE = 2;
     static  Integer STOP =0;
     static Integer status=STOP;
+    static Integer LOOP=OFF;
     static Integer sendStatus = STOP;
     Integer lastMusPos = 0;
     static Long lastTime;
@@ -60,8 +62,10 @@ public class MainActivity extends AppCompatActivity {
     static ListView listmusic;
     TextView mDuration;
     static Integer MODE=1;
-    static ListMusicAdapter adapter;
+    int musicCurPos = 0;
     public  static ProgressBar vProgressBar;
+
+    static ListMusicAdapter adapter;
     Bundle bundle=new Bundle();
     static DBHelper dbHelper;
     static SQLiteDatabase database;
@@ -69,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initViews();
@@ -79,8 +83,6 @@ public class MainActivity extends AppCompatActivity {
         initText();
         //vProgressBar = (ProgressBar)findViewById(R.id.vprogressbar);
         seekBar = (SeekBar) findViewById(R.id.seekBar);
-        Mplay.setBackgroundColor(Color.WHITE);
-        Mplay.setBackgroundResource(R.drawable.ic_play_arrow_black_36dp);
         musicName.setMaxWidth(350);
         musicName.setTextColor(Color.WHITE);
         musicAuthor.setTextColor(Color.WHITE);
@@ -111,13 +113,14 @@ public class MainActivity extends AppCompatActivity {
                 musicAuthor.setText(musicUnits.get(position).MAuthor);
                 startPlay(position, status);
                 status = ON;
-                Mplay.setBackgroundResource(R.drawable.ic_pause_black_36dp);
+                Mplay.setBackgroundResource(R.drawable.play_on);
                 lastMusPos = position;
             }
         });
         Mplay.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
+                if(musicUnits.size() == 0 )return false;
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         v.setBackgroundColor(Color.rgb(230, 230, 230));
@@ -125,18 +128,18 @@ public class MainActivity extends AppCompatActivity {
                     case MotionEvent.ACTION_UP:
                         v.setBackgroundColor(Color.WHITE);
                         if (status == PAUSE) {
-                            v.setBackgroundResource(R.drawable.ic_pause_black_36dp);
+                            v.setBackgroundResource(R.drawable.play64_on);
                             mediaPlayer.start();
-                            //startPlayProgressUpdater();
+                            startPlayProgressUpdater();
                             status = ON;
                         } else if (status == ON) {
-                            v.setBackgroundResource(R.drawable.ic_play_arrow_black_36dp);
+                            v.setBackgroundResource(R.drawable.play64_off);
                             mediaPlayer.pause();
                             status = PAUSE;
                             lastTime = SystemClock.elapsedRealtime();
 
                         } else if (status == STOP) {
-                            v.setBackgroundResource(R.drawable.ic_pause_black_36dp);
+                            v.setBackgroundResource(R.drawable.play64_on);
                             initText();
                             startPlay(0, status);
                             status = ON;
@@ -153,17 +156,29 @@ public class MainActivity extends AppCompatActivity {
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        v.setBackgroundColor(Color.rgb(230, 230, 230));
+                        if(status == ON || status == PAUSE) {
+                            v.setBackgroundResource(R.drawable.forward_on);
+                            musicCurPos = mediaPlayer.getCurrentPosition();
+                        }
+                        return true;
+                    case 2:
+                        if(status == ON || status == PAUSE) {
+                            musicCurPos += 1000;
+                            seekBar.setProgress(musicCurPos);
+                            mDuration.setText(getStrTime(musicCurPos));
+                        }
                         return true;
                     case MotionEvent.ACTION_UP:
-                        v.setBackgroundColor(Color.WHITE);
-                        lastMusPos++;
-                        if (lastMusPos >= musicUnits.size()) lastMusPos = 0;
-                        musicName.setText(musicUnits.get(lastMusPos).Mname);
-                        musicAuthor.setText(musicUnits.get(lastMusPos).MAuthor);
-                        startPlay(lastMusPos, status);
-                        status = ON;
+                        if(status == ON){
+                            v.setBackgroundResource(R.drawable.forward_off);
+                            mediaPlayer.seekTo(musicCurPos);
+                            mediaPlayer.start();
+                        }else if(status == PAUSE){
+                            v.setBackgroundResource(R.drawable.forward_off);
+                            mediaPlayer.seekTo(musicCurPos);
+                        }
                         return true;
+
                 }
                 return false;
             }
@@ -173,29 +188,43 @@ public class MainActivity extends AppCompatActivity {
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        v.setBackgroundColor(Color.rgb(230, 230, 230));
+                        if(status == ON || status == PAUSE) {
+                            v.setBackgroundResource(R.drawable.backward_on);
+                            musicCurPos = mediaPlayer.getCurrentPosition();
+                        }
+                        return true;
+                    case 2:
+                        if(status == ON || status == PAUSE) {
+                            musicCurPos -= 1000;
+                            seekBar.setProgress(musicCurPos);
+                            mDuration.setText(getStrTime(musicCurPos));
+                        }
                         return true;
                     case MotionEvent.ACTION_UP:
-                        v.setBackgroundColor(Color.WHITE);
-                        lastMusPos--;
-                        if (lastMusPos < 0) lastMusPos = musicUnits.size() - 1;
-                        musicName.setText(musicUnits.get(lastMusPos).Mname);
-                        musicAuthor.setText(musicUnits.get(lastMusPos).MAuthor);
-                        startPlay(lastMusPos, status);
-                        status = ON;
+                        if(status == ON){
+                            v.setBackgroundResource(R.drawable.backward_off);
+                            mediaPlayer.seekTo(musicCurPos);
+                            mediaPlayer.start();
+                        }else if(status == PAUSE){
+                            v.setBackgroundResource(R.drawable.backward_off);
+                            mediaPlayer.seekTo(musicCurPos);
+                        }
                         return true;
                 }
+
                 return false;
             }
         });
 
-        Mstop.setOnClickListener(new View.OnClickListener() {
+        Mloop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(status==ON){
-                    mediaPlayer.stop();
-                    mediaPlayer.reset();
-                    status =STOP;
+                if(LOOP==OFF){
+                   Mloop.setBackgroundResource(R.drawable.loop_on);
+                   LOOP =ON;
+                }else{
+                    Mloop.setBackgroundResource(R.drawable.loop_off);
+                    LOOP =OFF;
                 }
             }
         });
@@ -219,7 +248,7 @@ public class MainActivity extends AppCompatActivity {
         return(super.onOptionsItemSelected(item));
     }
 
-    public void startPlay( int position, final Integer status){
+    public void startPlay( int position, Integer status){
         if(status==ON || status ==PAUSE){
             mediaPlayer.stop();
             mediaPlayer.reset();
@@ -241,29 +270,34 @@ public class MainActivity extends AppCompatActivity {
         catch (IllegalStateException e) {
 
             e.printStackTrace();
+        }catch (IndexOutOfBoundsException e){
+            Mplay.setBackgroundResource(R.drawable.play64_off);
+            status = STOP;
         }
 
     }
 
     public void startPlayProgressUpdater() {
-        seekBar.setProgress(mediaPlayer.getCurrentPosition());
-        mDuration.setText(getStrTime(mediaPlayer.getCurrentPosition()));
-        if (mediaPlayer.isPlaying()) {
-            Runnable notification = new Runnable() {
-                public void run() {
-                    startPlayProgressUpdater();
+        try {
+            seekBar.setProgress(mediaPlayer.getCurrentPosition());
+            mDuration.setText(getStrTime(mediaPlayer.getCurrentPosition()));
+            if (mediaPlayer.isPlaying()) {
+                    Runnable notification = new Runnable() {
+                        public void run() {
+                            startPlayProgressUpdater();
+                        }
+                    };
+                seekHandler.postDelayed(notification,1000);
+            }else{
+                if(status == ON){
+                    if(LOOP == OFF)startPlay(++lastMusPos,status);
+                    else startPlay(lastMusPos,status);
+                    musicName.setText(musicUnits.get(lastMusPos).Mname);
+                    musicAuthor.setText(musicUnits.get(lastMusPos).MAuthor);
                 }
-            };
-            seekHandler.postDelayed(notification,1000);
-        }else{
-            if(status == ON){
-                startPlay(++lastMusPos,status);
-                musicName.setText(musicUnits.get(lastMusPos).Mname);
-                musicAuthor.setText(musicUnits.get(lastMusPos).MAuthor);
+                else  mediaPlayer.pause();
             }
-            else  mediaPlayer.pause();
-        }
-
+        }catch (Exception e){ e.printStackTrace();}
     }
 
     public void initViews(){
@@ -271,12 +305,14 @@ public class MainActivity extends AppCompatActivity {
     musicName = (TextView) findViewById(R.id.MusicName2);
     musicAuthor = (TextView) findViewById(R.id.MusicAuthor2);
     Mplay = (ImageButton) findViewById(R.id.Mplay);
+    Mplay.setBackgroundResource(R.drawable.play64_off);
     MplayNext = (ImageButton) findViewById(R.id.MplayNext);
+    MplayNext.setBackgroundResource(R.drawable.forward_off);
     MplayPrev = (ImageButton) findViewById(R.id.MplayPrev);
+    MplayPrev.setBackgroundResource(R.drawable.backward_off);
     mDuration = (TextView)findViewById(R.id.mDuration);
-    Mstop = (ImageButton) findViewById(R.id.MStop);
-    //mChronometer = (Chronometer) findViewById(R.id.chronometer);
-
+    Mloop = (ImageButton) findViewById(R.id.MLoop);
+    Mloop.setBackgroundResource(R.drawable.loop_off);
 }
 
     public void initText(){
@@ -433,9 +469,10 @@ public class MainActivity extends AppCompatActivity {
         File file = new File(folder);
         File[] fileList = file.listFiles();
         for (Integer i = 0; i < fileList.length; i++) {
+            if(fileList[i].isDirectory())continue;
             name = fileList[i].getName();
+            if(!isMusic(name))continue;
             if(ifMusicExists(name))continue;
-            Log.e("SADR",i + " NEW MUSIC " + name);
             MusicUnits unit = new MusicUnits();
             unit.Folder = folder;
             unit.File = name;
@@ -503,12 +540,19 @@ public class MainActivity extends AppCompatActivity {
             s = (curTime/1000)-(h*60*60)-(m*60);
             time = Integer.toString(h);
             time +=":";
-            time = m<10?"0"+Integer.toString(m):Integer.toString(m);
+            time += m<10?"0"+Integer.toString(m):Integer.toString(m);
             time +=":";
             time += s<10?"0"+Integer.toString(s):Integer.toString(s);
+
         }
 
         return time;
+    }
+
+    private static boolean isMusic(String name){
+        String ext = name.substring(name.lastIndexOf(".") +1,name.length());
+        if(ext.equalsIgnoreCase("mp3"))return true;
+        return false;
     }
 
 }

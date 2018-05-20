@@ -2,6 +2,7 @@ package com.example.smit.sadr.Adapters;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,8 +26,7 @@ public class ListMusicAdapter extends ArrayAdapter<MusicUnits>  {
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        if( this.musicUnitses.size() == 0)return convertView;
+    public View getView(final int position, View convertView, ViewGroup parent) {
         if(convertView == null){
             LayoutInflater inflater = (LayoutInflater) context
                     .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -39,7 +39,6 @@ public class ListMusicAdapter extends ArrayAdapter<MusicUnits>  {
         TextView textTime = (TextView) convertView.findViewById(R.id.MusicTime);
         ImageView imageView = (ImageView) convertView.findViewById(R.id.logo);
 
-        //textName.setText(musicUnitses.get(position).Mname.substring(0,musicUnitses.get(position).Mname.lastIndexOf(".")));
         textName.setText(musicUnitses.get(position).Mname);
         textName.setTextColor(Color.BLACK);
         textName.setMaxWidth(320);
