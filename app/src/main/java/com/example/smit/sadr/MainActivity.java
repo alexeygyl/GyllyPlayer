@@ -38,7 +38,7 @@ import java.util.List;
 import wseemann.media.FFmpegMediaMetadataRetriever;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnTouchListener{
 
     public static List<MusicUnits> musicUnits = new ArrayList<MusicUnits>();
     public  static List<String> folderUnits = new ArrayList<String>();
@@ -58,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
     static Long lastTime;
     static MediaPlayer mediaPlayer;
     SeekBar seekBar;
+    ProgressBar progressBar;
     Handler seekHandler = new Handler();
     TextView musicName;
     TextView musicAuthor;
@@ -66,6 +67,11 @@ public class MainActivity extends AppCompatActivity {
     static Integer MODE=1;
     int musicCurPos = 0;
     public  static ProgressBar vProgressBar;
+
+    float mX;
+    float mY;
+    float pass;
+    int w;
 
     static ListMusicAdapter adapter;
     Bundle bundle=new Bundle();
@@ -79,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initViews();
+        w = 540000;
         dbHelper = new DBHelper(this);
         musicUnits = getMusicListFromBD();
         folderUnits = getFolderListFromBD();
@@ -88,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
         musicName.setMaxWidth(350);
         musicName.setTextColor(Color.WHITE);
         musicAuthor.setTextColor(Color.WHITE);
-        getSupportActionBar().setBackgroundDrawable(new ColorDrawable(Color.rgb(40, 40, 40)));
+        getSupportActionBar().setBackgroundDrawable(new ColorDrawable(Color.rgb(12, 145, 56)));
         adapter = new ListMusicAdapter(this, musicUnits);
         listmusic.setAdapter(adapter);
         mediaPlayer = new MediaPlayer();
@@ -103,7 +110,6 @@ public class MainActivity extends AppCompatActivity {
                 if (status != STOP) {
                     SeekBar sb = (SeekBar) v;
                     mediaPlayer.seekTo(sb.getProgress());
-                    return  true;
                 }
                 return false;
             }
@@ -166,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
                     case 2:
                         if(status == ON || status == PAUSE) {
                             musicCurPos += 1000;
-                            seekBar.setProgress(musicCurPos);
+                            progressBar.setProgress(musicCurPos);
                             mDuration.setText(getStrTime(musicCurPos));
                         }
                         return true;
@@ -197,8 +203,8 @@ public class MainActivity extends AppCompatActivity {
                         return true;
                     case 2:
                         if(status == ON || status == PAUSE) {
-                            musicCurPos -= 1000;
-                            seekBar.setProgress(musicCurPos);
+                            musicCurPos =  musicCurPos - 1000 <= 0? 0: musicCurPos - 1000 ;
+                            progressBar.setProgress(musicCurPos);
                             mDuration.setText(getStrTime(musicCurPos));
                         }
                         return true;
@@ -231,6 +237,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        progressBar.setOnTouchListener(this);
+
     }
 
     @Override
@@ -261,6 +269,10 @@ public class MainActivity extends AppCompatActivity {
             mediaPlayer.start();
             seekBar.setProgress(0);
             seekBar.setMax(mediaPlayer.getDuration());
+            pass = (float)mediaPlayer.getDuration() / (float)w;
+            Log.e("SADR",mediaPlayer.getDuration() + " / " +  w  + " = " + pass);
+            progressBar.setProgress(0);
+            progressBar.setMax(mediaPlayer.getDuration());
             startPlayProgressUpdater();
 
         } catch (IOException e) {
@@ -282,6 +294,7 @@ public class MainActivity extends AppCompatActivity {
     public void startPlayProgressUpdater() {
         try {
             seekBar.setProgress(mediaPlayer.getCurrentPosition());
+            progressBar.setProgress(mediaPlayer.getCurrentPosition());
             mDuration.setText(getStrTime(mediaPlayer.getCurrentPosition()));
             if (mediaPlayer.isPlaying()) {
                     Runnable notification = new Runnable() {
@@ -315,6 +328,9 @@ public class MainActivity extends AppCompatActivity {
     mDuration = (TextView)findViewById(R.id.mDuration);
     Mloop = (ImageButton) findViewById(R.id.MLoop);
     Mloop.setBackgroundResource(R.drawable.loop_off);
+    progressBar = (ProgressBar) findViewById(R.id.progressBar);
+    //progressBar.setMax(540);
+    //progressBar.setProgress(300);
 }
 
     public void initText(){
@@ -602,4 +618,35 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        mX = event.getX();
+        mY = event.getY();
+        int h = v.getHeight();
+
+        // переключатель в зависимости от типа события
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN: // нажатие
+            case MotionEvent.ACTION_MOVE: // движение
+                if(mY <=h && mY >=0){
+                    progressBar.setProgress( (int)(pass * mX*1000));
+                    //Log.e("SADR",progressBar.getMax() + " : " +  pass + " * " + mX + " ");
+                }
+                break;
+            case MotionEvent.ACTION_UP: // отпускание
+                mediaPlayer.seekTo((int)(pass * mX*1000));
+                break;
+            case MotionEvent.ACTION_CANCEL:
+                // ничего не делаем
+                break;
+        }
+        return true;
+    }
+
+    private int getPos(int maxPW, int maxMD){
+        int out = 0;
+
+
+     return out;
+    }
 }

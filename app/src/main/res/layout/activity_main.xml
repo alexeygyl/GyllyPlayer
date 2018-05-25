@@ -18,8 +18,18 @@
 
     <RelativeLayout
     android:layout_width="match_parent"
-    android:layout_height="52dp"
-    android:background="@color/Button">
+    android:layout_height="65dp"
+    android:background="#00ffffff">
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:indeterminate="false"
+            android:indeterminateOnly="false"
+            android:progressDrawable="@drawable/progressbar"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_centerVertical="true"/>
 
     <TextView
         android:id="@+id/MusicName2"
@@ -51,13 +61,15 @@
         android:textColor="@color/white"
         android:text="00:00"
         android:textSize="23px"/>
+
 </RelativeLayout>
 
     <SeekBar
         android:id="@+id/seekBar"
         android:layout_width="match_parent"
-        android:layout_height="21dp"
+        android:layout_height="10dp"
         android:layout_alignParentRight="true"
+        android:visibility="invisible"
         android:progressDrawable="@drawable/verticalprogressbar"/>
 
 
