@@ -1,17 +1,14 @@
 package com.example.smit.sadr;
 
-import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteException;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.media.MediaPlayer;
 import android.os.Handler;
-import android.os.SystemClock;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -43,6 +40,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     public static List<MusicUnits> musicUnits = new ArrayList<MusicUnits>();
     public  static List<String> folderUnits = new ArrayList<String>();
     public static ImageButton Mplay;
+    public static  String root = "/storage";
     ImageButton Mloop;
     ImageButton MplayNext;
     ImageButton MplayPrev;
@@ -57,7 +55,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     Integer lastMusPos = 0;
     static Long lastTime;
     static MediaPlayer mediaPlayer;
-    SeekBar seekBar;
+    //SeekBar seekBar;
     ProgressBar progressBar;
     Handler seekHandler = new Handler();
     TextView musicName;
@@ -78,20 +76,26 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     static DBHelper dbHelper;
     static SQLiteDatabase database;
     static ContentValues contentValues;
+    FloatingActionButton fab;
 
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        getSupportActionBar().hide();
         initViews();
         w = 540000;
         dbHelper = new DBHelper(this);
         musicUnits = getMusicListFromBD();
         folderUnits = getFolderListFromBD();
         initText();
-        //vProgressBar = (ProgressBar)findViewById(R.id.vprogressbar);
-        seekBar = (SeekBar) findViewById(R.id.seekBar);
+//        MusicUnits radio = new MusicUnits();
+//        radio.Folder = "http://vprbbc.streamguys.net";
+//        radio.File = "http://vprbbc.streamguys.net/vprbbc24.mp3";
+//        radio.Mname = "Radio";
+//        radio.MAuthor = "Radio";
+//        musicUnits.add(radio);
         musicName.setMaxWidth(350);
         musicName.setTextColor(Color.WHITE);
         musicAuthor.setTextColor(Color.WHITE);
@@ -99,21 +103,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         adapter = new ListMusicAdapter(this, musicUnits);
         listmusic.setAdapter(adapter);
         mediaPlayer = new MediaPlayer();
-        for (String folder : folderUnits) {
-            updateMusicList(folder);
-            adapter.notifyDataSetChanged();
-        }
 
-        seekBar.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if (status != STOP) {
-                    SeekBar sb = (SeekBar) v;
-                    mediaPlayer.seekTo(sb.getProgress());
-                }
-                return false;
-            }
-        });
 
         listmusic.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -239,23 +229,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         progressBar.setOnTouchListener(this);
 
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch(item.getItemId()) {
-            case R.id.Folders:
-                Intent FoldersActivity = new Intent(this,Folders.class);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent FoldersActivity = new Intent(view.getContext(),AddNewFolder.class);
                 startActivityForResult(FoldersActivity,1);
-                return true;
-        }
-        return(super.onOptionsItemSelected(item));
+            }
+        });
+
     }
 
     public void startPlay( int position, Integer status){
@@ -267,8 +248,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             mediaPlayer.setDataSource(musicUnits.get(position).Folder +"/"+ musicUnits.get(position).File );
             mediaPlayer.prepare();
             mediaPlayer.start();
-            seekBar.setProgress(0);
-            seekBar.setMax(mediaPlayer.getDuration());
             pass = (float)mediaPlayer.getDuration() / (float)w;
             Log.e("SADR",mediaPlayer.getDuration() + " / " +  w  + " = " + pass);
             progressBar.setProgress(0);
@@ -293,7 +272,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     public void startPlayProgressUpdater() {
         try {
-            seekBar.setProgress(mediaPlayer.getCurrentPosition());
+            //seekBar.setProgress(mediaPlayer.getCurrentPosition());
             progressBar.setProgress(mediaPlayer.getCurrentPosition());
             mDuration.setText(getStrTime(mediaPlayer.getCurrentPosition()));
             if (mediaPlayer.isPlaying()) {
@@ -329,6 +308,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     Mloop = (ImageButton) findViewById(R.id.MLoop);
     Mloop.setBackgroundResource(R.drawable.loop_off);
     progressBar = (ProgressBar) findViewById(R.id.progressBar);
+    fab = (FloatingActionButton)findViewById(R.id.fab);
     //progressBar.setMax(540);
     //progressBar.setProgress(300);
 }
@@ -367,6 +347,23 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         }
     }
 
+    public static void removeMusicFromList(String file){
+        try {
+            for (MusicUnits unit: musicUnits) {
+                if(unit.File.equalsIgnoreCase(file)) {
+                    musicUnits.remove(unit);
+                }
+            }
+            adapter.notifyDataSetChanged();
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void removeFolder(String folder){
+        folderUnits.remove(folder);
+    }
+
     public static void removeMusicByFolderFromBD(String folder){
         database = dbHelper.getWritableDatabase();
         try {
@@ -378,6 +375,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     public static void removeFolderFromBD(String folder){
+        Log.e("SADR", "DIR:" + folder);
         database = dbHelper.getWritableDatabase();
         try {
             database.execSQL("DELETE FROM " + DBHelper.F_TABLE + " WHERE " + DBHelper.FOLDER + "= '" + folder + "'");
@@ -461,6 +459,51 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         return folderUnits;
     }
 
+    public static  String getCurDirFromBD(){
+       String dir = null;
+        database = dbHelper.getReadableDatabase();
+        String coluns[] = {DBHelper.CURDIR};
+        try {
+            Cursor cursor = database.query(DBHelper.C_TABLE, coluns, null, null, null, null, null);
+            if (cursor.moveToFirst()) {
+                int dirInd = cursor.getColumnIndex(DBHelper.CURDIR);
+                do {
+                    dir = cursor.getString(dirInd);
+                } while (cursor.moveToNext());
+
+            }else  {
+                database.close();
+                database = dbHelper.getWritableDatabase();
+                try {
+                    contentValues = new ContentValues();
+                    contentValues.put(DBHelper.CURDIR, root);
+                    database.insert(DBHelper.C_TABLE, null, contentValues);
+                    database.close();
+                }catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            }
+            database.close();
+            cursor.close();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return dir;
+    }
+
+    public static  void setCurDirBD(String newDir){
+        database = dbHelper.getWritableDatabase();
+        try {
+            contentValues = new ContentValues();
+            contentValues.put(DBHelper.CURDIR, newDir);
+            database.update(DBHelper.C_TABLE, contentValues, null, null);
+            database.close();
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -471,7 +514,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         }
     }
 
-    private static boolean ifMusicExists(String file){
+    public static boolean ifMusicExists(String file){
         for (MusicUnits unit : musicUnits) {
             if(unit.File.equalsIgnoreCase(file))return true;
         }
@@ -485,18 +528,16 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         String fullPath;
         int pos;
         File file = new File(folder);
-        File[] fileList = file.listFiles();
-        for (Integer i = 0; i < fileList.length; i++) {
-            if(fileList[i].isDirectory())continue;
-            name = fileList[i].getName();
-            if(!isMusic(name))continue;
-            if(ifMusicExists(name))continue;
+        if(file.isFile()){
+            name = file.getName();
+            if(!isMusic(name))return;
+            if(ifMusicExists(name))return;
             MusicUnits unit = new MusicUnits();
-            unit.Folder = folder;
+            unit.Folder = file.getParent();
             unit.File = name;
             try
             {
-                meta.setDataSource(fileList[i].getAbsolutePath());
+                meta.setDataSource(file.getAbsolutePath());
                 unit.MAuthor = meta.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_ARTIST);
                 if (unit.MAuthor == null) {
                     if ((pos = name.indexOf("-")) > 0) {
@@ -535,6 +576,61 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             }
             musicUnits.add(unit);
             insertNewMusic(unit);
+        }
+        else {
+            File[] fileList = file.listFiles();
+            for (Integer i = 0; i < fileList.length; i++) {
+                if(fileList[i].isDirectory())continue;
+                name = fileList[i].getName();
+               // Log.e("SADR", "FOLDER : "+ name);
+                MusicUnits unit = new MusicUnits();
+                if(!isMusic(name))continue;
+                if(ifMusicExists(name))continue;
+                unit.Folder = folder;
+                unit.File = name;
+                try
+                {
+                    meta.setDataSource(fileList[i].getAbsolutePath());
+                    unit.MAuthor = meta.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_ARTIST);
+                    if (unit.MAuthor == null) {
+                        if ((pos = name.indexOf("-")) > 0) {
+                            unit.MAuthor = name.substring(pos + 1, name.lastIndexOf("."));
+                        } else {
+                            unit.MAuthor = "Unknown";
+                        }
+                    }
+                    unit.MDuration =  Integer.parseInt(meta.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_DURATION));
+                    if(unit.MDuration == null)unit.MDuration = 0;
+                    unit.Mtime = getStrTime(unit.MDuration);
+
+                    unit.Mname = meta.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_TITLE);
+                    if(unit.Mname == null) {
+                        if ((pos = name.indexOf("-")) > 0) {
+                            unit.Mname = name.substring(0, pos);
+                        } else {
+                            unit.Mname = name.substring(0, name.lastIndexOf("."));
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    try {
+                        if((pos=name.indexOf("-"))>0){
+                            unit.MAuthor = name.substring(0,pos);
+                            unit.Mname = name.substring(pos+1,name.lastIndexOf("."));
+                        }
+                        else{
+                            unit.Mname = name.substring(0,name.lastIndexOf("."));
+                            unit.MAuthor = "Unknown";
+                        }
+                        unit.MDuration = 0;
+                        unit.Mtime = getStrTime(unit.MDuration);
+                    }catch (Exception x){}
+                }
+                musicUnits.add(unit);
+                insertNewMusic(unit);
+            }
+
         }
 
     }
@@ -643,10 +739,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         return true;
     }
 
-    private int getPos(int maxPW, int maxMD){
-        int out = 0;
-
-
-     return out;
+    public static boolean isInFolder(String folder){
+        for (MusicUnits unit: musicUnits) {
+            if(unit.Folder.contains(folder))return true;
+        }
+        return false;
     }
+
 }

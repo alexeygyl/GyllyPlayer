@@ -3,21 +3,21 @@ package com.example.smit.sadr.Adapters;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.support.v4.view.ViewPager;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewParent;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.smit.sadr.AddNewFolder;
+import com.example.smit.sadr.MainActivity;
+import com.example.smit.sadr.MusicUnits;
 import com.example.smit.sadr.R;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 public class ListNewFolderAdapter  extends ArrayAdapter<String> {
@@ -44,14 +44,31 @@ public class ListNewFolderAdapter  extends ArrayAdapter<String> {
         TextView folderNPath = (TextView) rowView.findViewById(R.id.NewFolderPath);
         TextView itemCount = (TextView) rowView.findViewById(R.id.NewFolderItemCount);
         ImageView folderIcon = (ImageView) rowView.findViewById(R.id.NewFolderLogo);
-        ImageView addFolder = (ImageView) rowView.findViewById(R.id.addFolder);
-        if(position != 0 && !AddNewFolder.currentDir.equals(AddNewFolder.root))
-            addFolder.setBackgroundResource(R.drawable.add_folder);
+        CheckBox addFolder = (CheckBox) rowView.findViewById(R.id.checkFolder);
+        if(listOfFolders.get(position).equalsIgnoreCase("..")) addFolder.setVisibility(View.INVISIBLE);
 
-        addFolder.setOnClickListener(new View.OnClickListener() {
+        File file = new File(AddNewFolder.currentDir+"/"+listOfFolders.get(position));
+        if(file.isFile()){
+            if(MainActivity.ifMusicExists(file.getName())){
+                addFolder.setChecked(true);
+            }
+        }
+        else if(file.isDirectory()){
+            if(MainActivity.folderUnits.contains(file.getPath())){
+                addFolder.setChecked(true);
+            }
+            else if(MainActivity.isInFolder(file.getPath())){
+                addFolder.setChecked(true);
+            }
+        }
+
+
+
+        addFolder.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
-            public void onClick(View v) {
-                AddNewFolder.showAlert(position);
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if(b) AddNewFolder.addFolder(position);
+                else AddNewFolder.delFolder(position);
             }
         });
         folderNPath.setText(listOfFolders.get(position));

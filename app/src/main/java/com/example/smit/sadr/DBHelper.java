@@ -10,6 +10,7 @@ public class DBHelper extends SQLiteOpenHelper {
     public static  String DATABASE_NAME = "BD";
     public static  String M_TABLE = "MusicList";
     public static  String F_TABLE = "FolderList";
+    public static  String C_TABLE = "Config";
 
     public static  String NAME = "Name";
     public static  String OWNER = "Owner";
@@ -17,6 +18,8 @@ public class DBHelper extends SQLiteOpenHelper {
     public static  String DURATION = "Duration";
     public static  String FILE = "File";
     public static  String FOLDER = "folder";
+
+    public static  String CURDIR = "curdir";
 
     public DBHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -35,12 +38,17 @@ public class DBHelper extends SQLiteOpenHelper {
                 FOLDER + " text" +
                 ")");
 
+        db.execSQL("create table " + C_TABLE + "(" +
+                CURDIR + " text" +
+                ")");
+
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("drop table if exists " + M_TABLE);
         db.execSQL("drop table if exists " + F_TABLE);
+        db.execSQL("drop table if exists " + C_TABLE);
         onCreate(db);
 
     }

@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.CheckBox;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -34,10 +35,12 @@ public class AddNewFolder extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_new_folder);
-        getSupportActionBar().setBackgroundDrawable(new ColorDrawable(Color.rgb(40, 40, 40)));
-        getSupportActionBar().setTitle(root);
+        //getSupportActionBar().setBackgroundDrawable(new ColorDrawable(Color.rgb(40, 40, 40)));
+        //getSupportActionBar().setTitle(root);
+        getSupportActionBar().hide();
         listFolder = (ListView)findViewById(R.id.listViewNewFolders);
-        currentDir=root;
+        currentDir=MainActivity.getCurDirFromBD();
+        currentDir = currentDir==null?root:currentDir;
         folderUnits =getListFolder(currentDir);
         adapter = new ListNewFolderAdapter(this, folderUnits);
         listFolder.setAdapter(adapter);
@@ -59,33 +62,19 @@ public class AddNewFolder extends AppCompatActivity {
                         listFolder.setAdapter(adapter);
                         getSupportActionBar().setTitle(currentDir);
                     }
+                    else if(f.isFile()){
+                        CheckBox cb = (CheckBox)view.findViewById(R.id.checkFolder);
+                        cb.setChecked(!cb.isChecked());
+                        if(cb.isChecked()) addFolder(position);
+                        else delFolder(position);
+                    }
                 }
             }
         });
 
        mHandler = new Handler(){
             public void handleMessage(Message msg) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(AddNewFolder.this);
-                builder.setMessage("Do you want to add this folder?").
-                setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        if(!MainActivity.folderUnits.contains(currentDir + "/" + folderUnits.get(posClicked))){
-                            MainActivity.folderUnits.add(currentDir + "/" + folderUnits.get(posClicked));
-                            MainActivity.insertNewFolder(currentDir + "/" + folderUnits.get(posClicked));
-                            MainActivity.updateMusicList(currentDir + "/" + folderUnits.get(posClicked));
-                            Toast.makeText(AddNewFolder.this, "Added", Toast.LENGTH_SHORT).show();
-                            toUpdate=1;
-                        }else Toast.makeText(AddNewFolder.this, "This folder is already exists", Toast.LENGTH_SHORT).show();
-                    }
-                }).setNegativeButton("No", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-
-                    }
-                });
-                AlertDialog alertDialog = builder.create();
-                alertDialog.show();
+                //Toast.makeText(AddNewFolder.class, "Added", Toast.LENGTH_SHORT).show();
             }
         };
     }
@@ -127,6 +116,7 @@ public class AddNewFolder extends AppCompatActivity {
     public void onBackPressed() {
         Intent returnIntent = new Intent();
         setResult(toUpdate, returnIntent);
+        MainActivity.setCurDirBD(currentDir);
         this.finish();
     }
 
@@ -134,5 +124,31 @@ public class AddNewFolder extends AppCompatActivity {
     public static void showAlert(int pos){
         posClicked = pos;
         mHandler.sendEmptyMessage(0);
+    }
+
+    public static void addFolder(int pos) {
+       File file = new File(currentDir + "/" + folderUnits.get(pos));
+       if(file.isFile()){
+           MainActivity.updateMusicList(currentDir + "/" + folderUnits.get(pos));
+       }
+       else if (!MainActivity.folderUnits.contains(currentDir + "/" + folderUnits.get(pos))) {
+            MainActivity.folderUnits.add(currentDir + "/" + folderUnits.get(pos));
+            MainActivity.insertNewFolder(currentDir + "/" + folderUnits.get(pos));
+            MainActivity.updateMusicList(currentDir + "/" + folderUnits.get(pos));
+
+        }
+    }
+
+    public static void delFolder(int pos){
+        File file = new File(currentDir + "/" + folderUnits.get(pos));
+        if(file.isFile()){
+            MainActivity.removeMusic(folderUnits.get(pos));
+            MainActivity.removeMusicFromList(folderUnits.get(pos));
+        }else{
+            MainActivity.removeMusicByFolderFromBD(currentDir + "/"+folderUnits.get(pos));
+            MainActivity.removeMusicByFolderFromList(currentDir + "/"+folderUnits.get(pos));
+            MainActivity.removeFolderFromBD(currentDir + "/"+folderUnits.get(pos));
+            MainActivity.removeFolder(currentDir + "/"+folderUnits.get(pos));
+        }
     }
 }
