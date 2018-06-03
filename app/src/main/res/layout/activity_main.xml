@@ -14,8 +14,58 @@
         android:id="@+id/listViewMusic"
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true">
-    </ListView>
+        android:layout_alignParentStart="true"
+        />
+
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/SeekRL"
+        android:background="#9cc6cec3"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true"
+        android:visibility="invisible">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/TextViewTMP"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="100dp"
+            android:textColor="#000000"
+            android:textSize="24dp"
+            />
+
+        <ProgressBar
+            style="?android:attr/progressBarStyleHorizontal"
+            android:indeterminate="false"
+            android:indeterminateOnly="false"
+            android:progressDrawable="@drawable/seek2"
+            android:layout_width="360px"
+            android:layout_height="360px"
+            android:layout_centerVertical="true"
+            android:layout_centerHorizontal="true"
+            android:progress="100"
+            android:background="#00ff0000"
+            android:clickable="true"/>
+
+        <ProgressBar
+            android:id="@+id/SeekProgress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:indeterminate="false"
+            android:indeterminateOnly="false"
+            android:progressDrawable="@drawable/seek"
+            android:layout_width="360px"
+            android:layout_height="360px"
+            android:layout_centerVertical="true"
+            android:layout_centerHorizontal="true"
+            android:progress="0"
+            android:max="360"
+            android:background="#00ff0000"
+            android:clickable="true"/>
+
+    </RelativeLayout>
 
     <LinearLayout
         android:id="@+id/separ1"
@@ -44,7 +94,8 @@
             android:progressDrawable="@drawable/progressbar"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_centerVertical="true"/>
+            android:layout_centerVertical="true"
+            android:clickable="true"/>
 
     <TextView
         android:id="@+id/MusicName2"
@@ -98,6 +149,17 @@
         android:layout_alignParentRight="true"
         />
 
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/fabRadio"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/antenna"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="70dp"
+        android:visibility="invisible"
+        />
+
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="73dp"
@@ -131,6 +193,15 @@
             android:layout_marginRight="10dp"
             android:background="@color/white"
              />
+        <ImageButton
+            android:id="@+id/Mseek"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_centerVertical="true"
+            android:layout_marginLeft="10dp"
+            android:background="@color/white"
+            />
 
         <ImageButton
             android:id="@+id/MplayPrev"

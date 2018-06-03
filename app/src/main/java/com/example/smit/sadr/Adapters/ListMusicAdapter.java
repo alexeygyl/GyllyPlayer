@@ -2,6 +2,7 @@ package com.example.smit.sadr.Adapters;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.media.MediaPlayer;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,6 +11,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.example.smit.sadr.MainActivity;
 import com.example.smit.sadr.MusicUnits;
 import com.example.smit.sadr.R;
 
@@ -34,10 +36,10 @@ public class ListMusicAdapter extends ArrayAdapter<MusicUnits>  {
             convertView = inflater.inflate(R.layout.list_music, parent, false);
 
         }
-        TextView textName = (TextView) convertView.findViewById(R.id.MusicName);
-        TextView textAuthor = (TextView) convertView.findViewById(R.id.MusicAuthor);
-        TextView textTime = (TextView) convertView.findViewById(R.id.MusicTime);
-        ImageView imageView = (ImageView) convertView.findViewById(R.id.logo);
+        TextView textName =convertView.findViewById(R.id.MusicName);
+        TextView textAuthor =  convertView.findViewById(R.id.MusicAuthor);
+        TextView textTime =  convertView.findViewById(R.id.MusicTime);
+        ImageView imageView = convertView.findViewById(R.id.logo);
 
         textName.setText(musicUnitses.get(position).Mname);
         textName.setTextColor(Color.BLACK);
@@ -46,7 +48,8 @@ public class ListMusicAdapter extends ArrayAdapter<MusicUnits>  {
         textAuthor.setTextColor(Color.rgb(150,150,150));
         textAuthor.setMaxWidth(320);
         textTime.setText(musicUnitses.get(position).Mtime);
-
+        if(MainActivity.lastMusPos != position)convertView.setBackgroundResource(R.drawable.musiclist);
+        else convertView.setBackgroundResource(R.drawable.presed);
         String s = musicUnitses.get(position).MAuthor;
         try{
             if (s.substring(0,1).equalsIgnoreCase("A") || s.substring(0,1).equalsIgnoreCase("А")) {
@@ -90,4 +93,5 @@ public class ListMusicAdapter extends ArrayAdapter<MusicUnits>  {
 
         return convertView;
     }
+
 }

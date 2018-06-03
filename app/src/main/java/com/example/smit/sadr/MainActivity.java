@@ -13,15 +13,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.ProgressBar;
-import android.widget.SeekBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -35,48 +33,51 @@ import java.util.List;
 import wseemann.media.FFmpegMediaMetadataRetriever;
 
 
-public class MainActivity extends AppCompatActivity implements View.OnTouchListener{
+public class MainActivity extends AppCompatActivity implements View.OnTouchListener, View.OnClickListener{
 
-    public static List<MusicUnits> musicUnits = new ArrayList<MusicUnits>();
-    public  static List<String> folderUnits = new ArrayList<String>();
-    public static ImageButton Mplay;
+    public static List<MusicUnits> musicUnits = new ArrayList<>();
+    public  static List<String> folderUnits = new ArrayList<>();
     public static  String root = "/storage";
+    RelativeLayout mainView,SeekRL;
+    ProgressBar SeekProgress;
+    int SeekProgressVal;
+    int MPCurrPos,MPCurrPos2;
     ImageButton Mloop;
     ImageButton MplayNext;
     ImageButton MplayPrev;
+    ImageButton Mplay;
+    ImageButton Mseek;
     static Integer OFF =0;
     static Integer ON =1;
     static Integer PAUSE = 2;
     static  Integer STOP =0;
     static Integer status=STOP;
     static Integer LOOP=OFF;
-    static Integer sendStatus = STOP;
     static Integer PHONE_STATUS = OFF;
-    Integer lastMusPos = 0;
-    static Long lastTime;
+    public static Integer lastMusPos = 0;
     static MediaPlayer mediaPlayer;
-    //SeekBar seekBar;
     ProgressBar progressBar;
     Handler seekHandler = new Handler();
     TextView musicName;
     TextView musicAuthor;
-    static ListView listmusic;
+    ListView listmusic;
     TextView mDuration;
-    static Integer MODE=1;
     int musicCurPos = 0;
-    public  static ProgressBar vProgressBar;
+    TextView qwe;
 
+    int first, last;
     float mX;
     float mY;
     float pass;
     int w;
 
     static ListMusicAdapter adapter;
-    Bundle bundle=new Bundle();
+    //Bundle bundle=new Bundle();
     static DBHelper dbHelper;
     static SQLiteDatabase database;
     static ContentValues contentValues;
     FloatingActionButton fab;
+    FloatingActionButton fabRadio;
 
 
     @Override
@@ -90,12 +91,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         musicUnits = getMusicListFromBD();
         folderUnits = getFolderListFromBD();
         initText();
-//        MusicUnits radio = new MusicUnits();
-//        radio.Folder = "http://vprbbc.streamguys.net";
-//        radio.File = "http://vprbbc.streamguys.net/vprbbc24.mp3";
-//        radio.Mname = "Radio";
-//        radio.MAuthor = "Radio";
-//        musicUnits.add(radio);
         musicName.setMaxWidth(350);
         musicName.setTextColor(Color.WHITE);
         musicAuthor.setTextColor(Color.WHITE);
@@ -108,6 +103,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         listmusic.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
+                first =  parent.getFirstVisiblePosition();
+                last = parent.getLastVisiblePosition();
+                if(lastMusPos>=first && lastMusPos <=last){
+                   parent.getChildAt(lastMusPos).setBackgroundResource(R.drawable.musiclist);
+                }
+                view.setBackgroundResource(R.drawable.presed);
                 musicName.setText(musicUnits.get(position).Mname);
                 musicAuthor.setText(musicUnits.get(position).MAuthor);
                 startPlay(position, status);
@@ -116,131 +117,24 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 lastMusPos = position;
             }
         });
-        Mplay.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if(musicUnits.size() == 0 )return false;
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        v.setBackgroundColor(Color.rgb(230, 230, 230));
-                        return true;
-                    case MotionEvent.ACTION_UP:
-                        v.setBackgroundColor(Color.WHITE);
-                        if (status == PAUSE) {
-                            v.setBackgroundResource(R.drawable.play64_on);
-                            mediaPlayer.start();
-                            startPlayProgressUpdater();
-                            status = ON;
-                        } else if (status == ON) {
-                            v.setBackgroundResource(R.drawable.play64_off);
-                            mediaPlayer.pause();
-                            status = PAUSE;
 
-                        } else if (status == STOP) {
-                            v.setBackgroundResource(R.drawable.play64_on);
-                            initText();
-                            startPlay(0, status);
-                            status = ON;
 
-                        }
-                        return true;
-                }
-                return false;
-            }
-        });
 
-        MplayNext.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        if(status == ON || status == PAUSE) {
-                            v.setBackgroundResource(R.drawable.forward_on);
-                            musicCurPos = mediaPlayer.getCurrentPosition();
-                        }
-                        return true;
-                    case 2:
-                        if(status == ON || status == PAUSE) {
-                            musicCurPos += 1000;
-                            progressBar.setProgress(musicCurPos);
-                            mDuration.setText(getStrTime(musicCurPos));
-                        }
-                        return true;
-                    case MotionEvent.ACTION_UP:
-                        if(status == ON){
-                            v.setBackgroundResource(R.drawable.forward_off);
-                            mediaPlayer.seekTo(musicCurPos);
-                            mediaPlayer.start();
-                        }else if(status == PAUSE){
-                            v.setBackgroundResource(R.drawable.forward_off);
-                            mediaPlayer.seekTo(musicCurPos);
-                        }
-                        return true;
-
-                }
-                return false;
-            }
-        });
-        MplayPrev.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        if(status == ON || status == PAUSE) {
-                            v.setBackgroundResource(R.drawable.backward_on);
-                            musicCurPos = mediaPlayer.getCurrentPosition();
-                        }
-                        return true;
-                    case 2:
-                        if(status == ON || status == PAUSE) {
-                            musicCurPos =  musicCurPos - 1000 <= 0? 0: musicCurPos - 1000 ;
-                            progressBar.setProgress(musicCurPos);
-                            mDuration.setText(getStrTime(musicCurPos));
-                        }
-                        return true;
-                    case MotionEvent.ACTION_UP:
-                        if(status == ON){
-                            v.setBackgroundResource(R.drawable.backward_off);
-                            mediaPlayer.seekTo(musicCurPos);
-                            mediaPlayer.start();
-                        }else if(status == PAUSE){
-                            v.setBackgroundResource(R.drawable.backward_off);
-                            mediaPlayer.seekTo(musicCurPos);
-                        }
-                        return true;
-                }
-
-                return false;
-            }
-        });
-
-        Mloop.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(LOOP==OFF){
-                   Mloop.setBackgroundResource(R.drawable.loop_on);
-                   LOOP =ON;
-                }else{
-                    Mloop.setBackgroundResource(R.drawable.loop_off);
-                    LOOP =OFF;
-                }
-            }
-        });
-
+        fab.setOnClickListener(this);
+        fabRadio.setOnClickListener(this);
+        Mloop.setOnClickListener(this);
+        Mseek.setOnClickListener(this);
+        SeekRL.setOnClickListener(this);
         progressBar.setOnTouchListener(this);
-
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent FoldersActivity = new Intent(view.getContext(),AddNewFolder.class);
-                startActivityForResult(FoldersActivity,1);
-            }
-        });
+        Mplay.setOnTouchListener(this);
+        MplayNext.setOnTouchListener(this);
+        MplayPrev.setOnTouchListener(this);
+        SeekProgress.setOnTouchListener(this);
 
     }
 
     public void startPlay( int position, Integer status){
-        if(status==ON || status ==PAUSE){
+        if(status.equals(ON) || status.equals(PAUSE)){
             mediaPlayer.stop();
             mediaPlayer.reset();
         }
@@ -249,7 +143,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             mediaPlayer.prepare();
             mediaPlayer.start();
             pass = (float)mediaPlayer.getDuration() / (float)w;
-            Log.e("SADR",mediaPlayer.getDuration() + " / " +  w  + " = " + pass);
+            //Log.e("SADR",mediaPlayer.getDuration() + " / " +  w  + " = " + pass);
             progressBar.setProgress(0);
             progressBar.setMax(mediaPlayer.getDuration());
             startPlayProgressUpdater();
@@ -265,7 +159,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             e.printStackTrace();
         }catch (IndexOutOfBoundsException e){
             Mplay.setBackgroundResource(R.drawable.play64_off);
-            status = STOP;
+            //status = STOP;
         }
 
     }
@@ -283,8 +177,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     };
                 seekHandler.postDelayed(notification,1000);
             }else{
-                if(status == ON){
-                    if(LOOP == OFF)startPlay(++lastMusPos,status);
+                if(status.equals(ON) ){
+                    if(LOOP.equals(OFF))startPlay(++lastMusPos,status);
                     else startPlay(lastMusPos,status);
                     musicName.setText(musicUnits.get(lastMusPos).Mname);
                     musicAuthor.setText(musicUnits.get(lastMusPos).MAuthor);
@@ -295,22 +189,27 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     public void initViews(){
-    listmusic = (ListView) findViewById(R.id.listViewMusic);
-    musicName = (TextView) findViewById(R.id.MusicName2);
-    musicAuthor = (TextView) findViewById(R.id.MusicAuthor2);
-    Mplay = (ImageButton) findViewById(R.id.Mplay);
+    mainView = findViewById(R.id.MainL);
+    SeekRL = findViewById(R.id.SeekRL);
+    SeekProgress = findViewById(R.id.SeekProgress);
+    listmusic =  findViewById(R.id.listViewMusic);
+    musicName =  findViewById(R.id.MusicName2);
+    musicAuthor =  findViewById(R.id.MusicAuthor2);
+    Mplay = findViewById(R.id.Mplay);
     Mplay.setBackgroundResource(R.drawable.play64_off);
-    MplayNext = (ImageButton) findViewById(R.id.MplayNext);
+    MplayNext = findViewById(R.id.MplayNext);
     MplayNext.setBackgroundResource(R.drawable.forward_off);
-    MplayPrev = (ImageButton) findViewById(R.id.MplayPrev);
+    MplayPrev = findViewById(R.id.MplayPrev);
     MplayPrev.setBackgroundResource(R.drawable.backward_off);
-    mDuration = (TextView)findViewById(R.id.mDuration);
-    Mloop = (ImageButton) findViewById(R.id.MLoop);
+    Mseek = findViewById(R.id.Mseek);
+    Mseek.setBackgroundResource(R.drawable.volume_control);
+    mDuration = findViewById(R.id.mDuration);
+    Mloop =  findViewById(R.id.MLoop);
     Mloop.setBackgroundResource(R.drawable.loop_off);
-    progressBar = (ProgressBar) findViewById(R.id.progressBar);
-    fab = (FloatingActionButton)findViewById(R.id.fab);
-    //progressBar.setMax(540);
-    //progressBar.setProgress(300);
+    progressBar =  findViewById(R.id.progressBar);
+    fab = findViewById(R.id.fab);
+    fabRadio = findViewById(R.id.fabRadio);
+    qwe = findViewById(R.id.TextViewTMP);
 }
 
     public void initText(){
@@ -386,7 +285,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     public static void removeMusicByFolderFromList(String folder){
-        List<MusicUnits> out = new ArrayList<MusicUnits>();
+        List<MusicUnits> out = new ArrayList<>();
         for (MusicUnits unit: musicUnits) {
             if(!unit.Folder.equalsIgnoreCase(folder))out.add(unit);
         }
@@ -523,9 +422,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     public  static void updateMusicList(String folder){
         FFmpegMediaMetadataRetriever meta = new FFmpegMediaMetadataRetriever();
-        String tmp;
+        //String tmp;
         String name;
-        String fullPath;
+        //String fullPath;
         int pos;
         File file = new File(folder);
         if(file.isFile()){
@@ -541,23 +440,25 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 unit.MAuthor = meta.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_ARTIST);
                 if (unit.MAuthor == null) {
                     if ((pos = name.indexOf("-")) > 0) {
-                        unit.MAuthor = name.substring(pos + 1, name.lastIndexOf("."));
+                        unit.MAuthor = name.substring(0, pos);
                     } else {
                         unit.MAuthor = "Unknown";
                     }
                 }
                 unit.MDuration =  Integer.parseInt(meta.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_DURATION));
-                if(unit.MDuration == null)unit.MDuration = 0;
+                if(unit.MDuration==null)unit.MDuration = 0;
                 unit.Mtime = getStrTime(unit.MDuration);
 
                 unit.Mname = meta.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_TITLE);
+
                 if(unit.Mname == null) {
                     if ((pos = name.indexOf("-")) > 0) {
-                        unit.Mname = name.substring(0, pos);
+                        unit.Mname = name.substring(pos + 1, name.lastIndexOf("."));
                     } else {
                         unit.Mname = name.substring(0, name.lastIndexOf("."));
                     }
                 }
+
             }
             catch (Exception e)
             {
@@ -592,9 +493,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 {
                     meta.setDataSource(fileList[i].getAbsolutePath());
                     unit.MAuthor = meta.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_ARTIST);
+
                     if (unit.MAuthor == null) {
                         if ((pos = name.indexOf("-")) > 0) {
-                            unit.MAuthor = name.substring(pos + 1, name.lastIndexOf("."));
+                            unit.MAuthor = name.substring(0, pos);
                         } else {
                             unit.MAuthor = "Unknown";
                         }
@@ -606,7 +508,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     unit.Mname = meta.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_TITLE);
                     if(unit.Mname == null) {
                         if ((pos = name.indexOf("-")) > 0) {
-                            unit.Mname = name.substring(0, pos);
+                            unit.Mname = name.substring(pos + 1, name.lastIndexOf("."));
                         } else {
                             unit.Mname = name.substring(0, name.lastIndexOf("."));
                         }
@@ -616,8 +518,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 {
                     try {
                         if((pos=name.indexOf("-"))>0){
-                            unit.MAuthor = name.substring(0,pos);
                             unit.Mname = name.substring(pos+1,name.lastIndexOf("."));
+                            unit.MAuthor = name.substring(0,pos);
                         }
                         else{
                             unit.Mname = name.substring(0,name.lastIndexOf("."));
@@ -669,21 +571,185 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         return false;
     }
 
+    public static boolean isInFolder(String folder){
+        for (MusicUnits unit: musicUnits) {
+            if(unit.Folder.contains(folder))return true;
+        }
+        return false;
+    }
+
+    public void onTouchProgressBar(View v, MotionEvent event){
+        mX = event.getX();
+        mY = event.getY();
+        int h = v.getHeight();
+
+
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+            case MotionEvent.ACTION_MOVE:
+                if(mY <=h && mY >=0){
+                    progressBar. setProgress( (int)(pass * mX*1000));
+                    mDuration.setText(getStrTime((int)(pass * mX*1000)));
+                }
+                break;
+            case MotionEvent.ACTION_UP: // отпускание
+                mediaPlayer.seekTo((int)(pass * mX*1000));
+                break;
+            case MotionEvent.ACTION_CANCEL:
+                break;
+        }
+    }
+
+    int calculateGraus(double x, double y , double a){
+        double out=0;
+        out = Math.abs(y-a) / Math.sqrt(Math.pow( Math.abs(x-a),2) +  Math.pow( Math.abs(y-a),2));
+        if(mX-a >= 0 && mY - a >=0) return (int)Math.toDegrees( Math.asin(out));
+        else if(mX-a >= 0 && mY - a <0)return (int)(360 - Math.toDegrees( Math.asin(out)));
+        else if(mX-a < 0 && mY - a < 0) return (int)(180 + Math.toDegrees( Math.asin(out)));
+        else if(mX-a < 0 && mY - a >= 0)return (int)(180 - Math.toDegrees( Math.asin(out)));
+        return 0;
+    }
+
+
+    public void onTouchSeekProgress(View v, MotionEvent event){
+        mX = event.getX();
+        mY = event.getY();
+        double a = v.getHeight()/2;
+
+        if((calculateGraus((double)mX,(double)mY,a) - SeekProgressVal) >300){
+            MPCurrPos-= 120000;
+        }
+        else if((calculateGraus((double)mX,(double)mY,a) - SeekProgressVal) <-300){
+            MPCurrPos+= 120000;
+        }
+
+        MPCurrPos += ((calculateGraus((double)mX,(double)mY,a) - SeekProgressVal)/3)*1000;
+        if(MPCurrPos < 0)MPCurrPos=0;
+        else if(MPCurrPos>mediaPlayer.getDuration())MPCurrPos = mediaPlayer.getDuration();
+        SeekProgressVal = calculateGraus((double)mX,(double)mY,a);
+        mDuration.setText(getStrTime(MPCurrPos));
+        if((MPCurrPos - MPCurrPos2) >= 0)qwe.setText("+" + getStrTime(MPCurrPos - MPCurrPos2));
+        else if((MPCurrPos - MPCurrPos2) < 0)qwe.setText("-" + getStrTime(MPCurrPos2 - MPCurrPos));
+        SeekProgress.setProgress(calculateGraus((double)mX,(double)mY,a));
+        progressBar.setProgress(MPCurrPos);
+
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_UP: // отпускание
+                mediaPlayer.seekTo(MPCurrPos);
+                break;
+        }
+    }
+
+    public void onTouchMPlay(View v, MotionEvent event){
+        if(musicUnits.size() == 0 )return;
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                v.setBackgroundColor(Color.rgb(230, 230, 230));
+                return;
+            case MotionEvent.ACTION_UP:
+                v.setBackgroundColor(Color.WHITE);
+                if (status == PAUSE) {
+                    v.setBackgroundResource(R.drawable.play64_on);
+                    mediaPlayer.start();
+                    startPlayProgressUpdater();
+                    status = ON;
+                } else if (status == ON) {
+                    v.setBackgroundResource(R.drawable.play64_off);
+                    mediaPlayer.pause();
+                    status = PAUSE;
+
+                } else if (status == STOP) {
+                    v.setBackgroundResource(R.drawable.play64_on);
+                    initText();
+                    startPlay(0, status);
+                    status = ON;
+                }
+        }
+    }
+
+    public void onTouchMplayNext(View v, MotionEvent event){
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                if(status == ON || status == PAUSE) {
+                    v.setBackgroundResource(R.drawable.forward_on);
+                    musicCurPos = mediaPlayer.getCurrentPosition();
+                }
+                return;
+            case 2:
+                if(status == ON || status == PAUSE) {
+                    musicCurPos += 1000;
+                    progressBar.setProgress(musicCurPos);
+                    mDuration.setText(getStrTime(musicCurPos));
+                }
+                return;
+            case MotionEvent.ACTION_UP:
+                if(status == ON){
+                    v.setBackgroundResource(R.drawable.forward_off);
+                    mediaPlayer.seekTo(musicCurPos);
+                    mediaPlayer.start();
+                }else if(status == PAUSE){
+                    v.setBackgroundResource(R.drawable.forward_off);
+                    mediaPlayer.seekTo(musicCurPos);
+                }
+                return;
+
+        }
+    }
+
+    public void onTouchMplayPrev(View v, MotionEvent event){
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                if(status == ON || status == PAUSE) {
+                    v.setBackgroundResource(R.drawable.backward_on);
+                    musicCurPos = mediaPlayer.getCurrentPosition();
+                }
+                return;
+            case 2:
+                if(status == ON || status == PAUSE) {
+                    musicCurPos =  musicCurPos - 1000 <= 0? 0: musicCurPos - 1000 ;
+                    progressBar.setProgress(musicCurPos);
+                    mDuration.setText(getStrTime(musicCurPos));
+                }
+                return;
+            case MotionEvent.ACTION_UP:
+                if(status == ON){
+                    v.setBackgroundResource(R.drawable.backward_off);
+                    mediaPlayer.seekTo(musicCurPos);
+                    mediaPlayer.start();
+                }else if(status == PAUSE){
+                    v.setBackgroundResource(R.drawable.backward_off);
+                    mediaPlayer.seekTo(musicCurPos);
+                }
+                return;
+        }
+
+    }
+
+    public void onClickMloop(View v){
+        if(LOOP.equals(OFF)){
+            Mloop.setBackgroundResource(R.drawable.loop_on);
+            LOOP =ON;
+        }else{
+            Mloop.setBackgroundResource(R.drawable.loop_off);
+            LOOP =OFF;
+        }
+    }
+
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
         switch (keyCode){
             case 126: //FONES STOP-PLAY
                 if(musicUnits.size()==0)return false;
-                if (status == PAUSE) {
+                if (status.equals(PAUSE)) {
                     Mplay.setBackgroundResource(R.drawable.play64_on);
                     mediaPlayer.start();
                     startPlayProgressUpdater();
                     status = ON;
-                } else if (status == ON) {
+                } else if (status.equals(ON)) {
                     Mplay.setBackgroundResource(R.drawable.play64_off);
                     mediaPlayer.pause();
                     status = PAUSE;
-                } else if (status == STOP) {
+                } else if (status.equals(STOP)) {
                     Mplay.setBackgroundResource(R.drawable.play64_on);
                     initText();
                     startPlay(0, status);
@@ -716,34 +782,57 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-        mX = event.getX();
-        mY = event.getY();
-        int h = v.getHeight();
+        v.performClick();
+        switch (v.getId()){
+            case R.id.progressBar:
+                onTouchProgressBar(v,event);
+                return true;
+            case R.id.Mplay:
+                onTouchMPlay(v,event);
+                return true;
+            case R.id.MplayNext:
+                onTouchMplayNext(v,event);
+                return true;
+            case R.id.MplayPrev:
+                onTouchMplayPrev(v,event);
+                return true;
+            case R.id.SeekProgress:
+                onTouchSeekProgress(v,event);
+                return true;
 
-        // переключатель в зависимости от типа события
-        switch (event.getAction()) {
-            case MotionEvent.ACTION_DOWN: // нажатие
-            case MotionEvent.ACTION_MOVE: // движение
-                if(mY <=h && mY >=0){
-                    progressBar.setProgress( (int)(pass * mX*1000));
-                    //Log.e("SADR",progressBar.getMax() + " : " +  pass + " * " + mX + " ");
-                }
-                break;
-            case MotionEvent.ACTION_UP: // отпускание
-                mediaPlayer.seekTo((int)(pass * mX*1000));
-                break;
-            case MotionEvent.ACTION_CANCEL:
-                // ничего не делаем
-                break;
-        }
-        return true;
-    }
-
-    public static boolean isInFolder(String folder){
-        for (MusicUnits unit: musicUnits) {
-            if(unit.Folder.contains(folder))return true;
         }
         return false;
+    }
+
+    @Override
+    public void onClick(View view) {
+        Intent Activity;
+        switch (view.getId()){
+            case R.id.MLoop:
+                onClickMloop(view);
+                break;
+            case R.id.fab:
+                Activity = new Intent(view.getContext(),AddNewFolder.class);
+                startActivityForResult(Activity,1);
+                break;
+            case R.id.fabRadio:
+                Activity = new Intent(view.getContext(),Radio.class);
+                startActivityForResult(Activity,1);
+                break;
+            case R.id.Mseek:
+                if(SeekRL.getVisibility() == View.VISIBLE)SeekRL.setVisibility(View.INVISIBLE);
+                else SeekRL.setVisibility(View.VISIBLE);
+                SeekProgress.setProgress(0);
+                SeekProgressVal = 0;
+                qwe.setText("+00:00");
+                MPCurrPos2 = MPCurrPos = mediaPlayer.getCurrentPosition();
+                break;
+            case R.id.SeekRL:
+               SeekRL.setVisibility(View.INVISIBLE);
+                break;
+
+        }
+
     }
 
 }

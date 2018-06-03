@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="60dp"
+    android:weightSum="1">
+    <TextView
+        android:id="@+id/RadioName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_marginLeft="110px"
+        android:layout_marginTop="11px"
+        android:singleLine="true"
+        android:textSize="24px" >
+    </TextView>
+    <TextView
+        android:id="@+id/RadioLink"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/RadioName"
+        android:layout_marginLeft="110px"
+        android:textSize="18px"
+        android:singleLine="true"
+        android:text="test">
+    </TextView>
+
+
+
+</RelativeLayout>
