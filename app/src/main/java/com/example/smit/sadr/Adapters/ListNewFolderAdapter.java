@@ -13,6 +13,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.smit.sadr.AddNewFolder;
+import com.example.smit.sadr.MPlayer;
 import com.example.smit.sadr.MainActivity;
 import com.example.smit.sadr.MusicUnits;
 import com.example.smit.sadr.R;
@@ -41,23 +42,23 @@ public class ListNewFolderAdapter  extends ArrayAdapter<String> {
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
         View rowView = inflater.inflate(R.layout.list_new_folders, parent, false);
-        TextView folderNPath = (TextView) rowView.findViewById(R.id.NewFolderPath);
-        TextView itemCount = (TextView) rowView.findViewById(R.id.NewFolderItemCount);
-        ImageView folderIcon = (ImageView) rowView.findViewById(R.id.NewFolderLogo);
-        CheckBox addFolder = (CheckBox) rowView.findViewById(R.id.checkFolder);
+        TextView folderNPath = rowView.findViewById(R.id.NewFolderPath);
+        TextView itemCount =  rowView.findViewById(R.id.NewFolderItemCount);
+        ImageView folderIcon = rowView.findViewById(R.id.NewFolderLogo);
+        CheckBox addFolder =  rowView.findViewById(R.id.checkFolder);
         if(listOfFolders.get(position).equalsIgnoreCase("..")) addFolder.setVisibility(View.INVISIBLE);
 
         File file = new File(AddNewFolder.currentDir+"/"+listOfFolders.get(position));
         if(file.isFile()){
-            if(MainActivity.ifMusicExists(file.getName())){
+            if(MPlayer.INSTANCE.ifMusicExists(file.getName())){
                 addFolder.setChecked(true);
             }
         }
         else if(file.isDirectory()){
-            if(MainActivity.folderUnits.contains(file.getPath())){
+            if(MPlayer.INSTANCE.ifFolderExists(file.getPath())){
                 addFolder.setChecked(true);
             }
-            else if(MainActivity.isInFolder(file.getPath())){
+            else if(MPlayer.INSTANCE.isInFolder(file.getPath())){
                 addFolder.setChecked(true);
             }
         }
@@ -98,4 +99,5 @@ public class ListNewFolderAdapter  extends ArrayAdapter<String> {
                                             listOfFolders.get(position).lastIndexOf(".")+1,
                                             listOfFolders.get(position).length());
     }
+
 }

@@ -33,8 +33,8 @@ public class ListRadioAdapter extends ArrayAdapter<MusicUnits>  {
             convertView = inflater.inflate(R.layout.list_radio, parent, false);
 
         }
-        TextView RadioName = (TextView) convertView.findViewById(R.id.RadioName);
-        TextView RadioLink = (TextView) convertView.findViewById(R.id.RadioLink);
+        TextView RadioName = convertView.findViewById(R.id.RadioName);
+        TextView RadioLink = convertView.findViewById(R.id.RadioLink);
 
         RadioName.setText(radioUnits.get(position).Mname);
         RadioName.setTextColor(Color.BLACK);

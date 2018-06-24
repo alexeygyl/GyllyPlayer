@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AddNewFolder extends AppCompatActivity {
+
+
     public static List<String> folderUnits;
     public static ListView listFolder;
     public static  String root = "/storage";
@@ -31,15 +33,17 @@ public class AddNewFolder extends AppCompatActivity {
     static Integer posClicked=-1;
     public  static Handler mHandler;
     Integer toUpdate=0;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_new_folder);
-        //getSupportActionBar().setBackgroundDrawable(new ColorDrawable(Color.rgb(40, 40, 40)));
-        //getSupportActionBar().setTitle(root);
+
+
         getSupportActionBar().hide();
-        listFolder = (ListView)findViewById(R.id.listViewNewFolders);
-        currentDir=MainActivity.getCurDirFromBD();
+        listFolder = findViewById(R.id.listViewNewFolders);
+        currentDir=DBHelper.INSTANCE.getCurDir();
         currentDir = currentDir==null?root:currentDir;
         folderUnits =getListFolder(currentDir);
         adapter = new ListNewFolderAdapter(this, folderUnits);
@@ -63,7 +67,7 @@ public class AddNewFolder extends AppCompatActivity {
                         getSupportActionBar().setTitle(currentDir);
                     }
                     else if(f.isFile()){
-                        CheckBox cb = (CheckBox)view.findViewById(R.id.checkFolder);
+                        CheckBox cb = view.findViewById(R.id.checkFolder);
                         cb.setChecked(!cb.isChecked());
                         if(cb.isChecked()) addFolder(position);
                         else delFolder(position);
@@ -77,7 +81,9 @@ public class AddNewFolder extends AppCompatActivity {
                 //Toast.makeText(AddNewFolder.class, "Added", Toast.LENGTH_SHORT).show();
             }
         };
+
     }
+
 
     public  List<String> getListFolder(String path){
         List<String> listFolders = new ArrayList<String>();
@@ -116,7 +122,7 @@ public class AddNewFolder extends AppCompatActivity {
     public void onBackPressed() {
         Intent returnIntent = new Intent();
         setResult(toUpdate, returnIntent);
-        MainActivity.setCurDirBD(currentDir);
+        DBHelper.INSTANCE.setCurDir(currentDir);
         this.finish();
     }
 
@@ -129,12 +135,12 @@ public class AddNewFolder extends AppCompatActivity {
     public static void addFolder(int pos) {
        File file = new File(currentDir + "/" + folderUnits.get(pos));
        if(file.isFile()){
-           MainActivity.updateMusicList(currentDir + "/" + folderUnits.get(pos));
+           MPlayer.INSTANCE.updateMusicList(currentDir + "/" + folderUnits.get(pos));
        }
-       else if (!MainActivity.folderUnits.contains(currentDir + "/" + folderUnits.get(pos))) {
-            MainActivity.folderUnits.add(currentDir + "/" + folderUnits.get(pos));
-            MainActivity.insertNewFolder(currentDir + "/" + folderUnits.get(pos));
-            MainActivity.updateMusicList(currentDir + "/" + folderUnits.get(pos));
+       else if (!MPlayer.INSTANCE.ifFolderExists(currentDir + "/" + folderUnits.get(pos))) {
+           MPlayer.INSTANCE.addFolder(currentDir + "/" + folderUnits.get(pos));
+           DBHelper.INSTANCE.insertNewFolder(currentDir + "/" + folderUnits.get(pos));
+           MPlayer.INSTANCE.updateMusicList(currentDir + "/" + folderUnits.get(pos));
 
         }
     }
@@ -142,13 +148,14 @@ public class AddNewFolder extends AppCompatActivity {
     public static void delFolder(int pos){
         File file = new File(currentDir + "/" + folderUnits.get(pos));
         if(file.isFile()){
-            MainActivity.removeMusic(folderUnits.get(pos));
-            MainActivity.removeMusicFromList(folderUnits.get(pos));
+            DBHelper.INSTANCE.removeMusic(folderUnits.get(pos));
+            MPlayer.INSTANCE.removeMusic(folderUnits.get(pos));
         }else{
-            MainActivity.removeMusicByFolderFromBD(currentDir + "/"+folderUnits.get(pos));
-            MainActivity.removeMusicByFolderFromList(currentDir + "/"+folderUnits.get(pos));
-            MainActivity.removeFolderFromBD(currentDir + "/"+folderUnits.get(pos));
-            MainActivity.removeFolder(currentDir + "/"+folderUnits.get(pos));
+            DBHelper.INSTANCE.removeMusicByFolder(currentDir + "/"+folderUnits.get(pos));
+            DBHelper.INSTANCE.removeFolder(currentDir + "/"+folderUnits.get(pos));
+            MPlayer.INSTANCE.removeMusicByFolder(currentDir + "/"+folderUnits.get(pos));
+            MPlayer.INSTANCE.removeFolder(currentDir + "/"+folderUnits.get(pos));
         }
     }
+
 }

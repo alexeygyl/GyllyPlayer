@@ -48,8 +48,8 @@ public class ListMusicAdapter extends ArrayAdapter<MusicUnits>  {
         textAuthor.setTextColor(Color.rgb(150,150,150));
         textAuthor.setMaxWidth(320);
         textTime.setText(musicUnitses.get(position).Mtime);
-        if(MainActivity.lastMusPos != position)convertView.setBackgroundResource(R.drawable.musiclist);
-        else convertView.setBackgroundResource(R.drawable.presed);
+        //if(MainActivity.lastMusPos != position)convertView.setBackgroundResource(R.drawable.musiclist);
+        //else convertView.setBackgroundResource(R.drawable.presed);
         String s = musicUnitses.get(position).MAuthor;
         try{
             if (s.substring(0,1).equalsIgnoreCase("A") || s.substring(0,1).equalsIgnoreCase("А")) {

@@ -65,6 +65,19 @@
             android:background="#00ff0000"
             android:clickable="true"/>
 
+        <Button
+            android:layout_width="200px"
+            android:layout_height="200px"
+            android:id="@+id/SeekProgressApply"
+            android:background="@drawable/button1"
+            android:layout_centerVertical="true"
+            android:layout_centerHorizontal="true"
+            android:text="A"
+            android:textStyle="bold"
+            android:textColor="#ffffff"
+            android:textSize="48px"
+            />
+
     </RelativeLayout>
 
     <LinearLayout

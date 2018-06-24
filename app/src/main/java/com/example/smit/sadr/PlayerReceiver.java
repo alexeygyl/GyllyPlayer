@@ -13,23 +13,14 @@ public class PlayerReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         String phone_state = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
-        if (phone_state.equals(TelephonyManager.EXTRA_STATE_RINGING) && MainActivity.status == MainActivity.ON) {
-            MainActivity.mediaPlayer.pause();
-            MainActivity.status = MainActivity.PAUSE;
-            MainActivity.PHONE_STATUS = MainActivity.ON;
+        if (phone_state.equals(TelephonyManager.EXTRA_STATE_RINGING)) {
+           MPlayer.INSTANCE.onInputCall();
         }
-        else if (phone_state.equals(TelephonyManager.EXTRA_STATE_OFFHOOK )&& MainActivity.status == MainActivity.ON){
-            MainActivity.mediaPlayer.pause();
-            MainActivity.status = MainActivity.PAUSE;
-            MainActivity.PHONE_STATUS = MainActivity.ON;
+        else if (phone_state.equals(TelephonyManager.EXTRA_STATE_OFFHOOK )){
+            MPlayer.INSTANCE.onOutputCall();
         }
-        else if (phone_state.equals(TelephonyManager.EXTRA_STATE_IDLE) && MainActivity.status == MainActivity.PAUSE){
-            if( MainActivity.PHONE_STATUS == MainActivity.ON) {
-                MainActivity.mediaPlayer.start();
-                MainActivity.status = MainActivity.ON;
-                MainActivity.PHONE_STATUS = MainActivity.OFF;
-            }
+        else if (phone_state.equals(TelephonyManager.EXTRA_STATE_IDLE)){
+            MPlayer.INSTANCE.onEndCall();
         }
-
     }
 }
